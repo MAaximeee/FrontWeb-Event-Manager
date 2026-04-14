@@ -8,7 +8,7 @@ const Scoreboard = () => {
   const [timeToStart, setTimeToStart] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/event")
+    fetch("https://event-manager.fr/api/event")
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
@@ -25,7 +25,7 @@ const Scoreboard = () => {
           if (todayEvent) {
             setEvent(todayEvent);
 
-            fetch(`http://localhost:8000/api/event/${todayEvent.id}/teams`)
+            fetch(`https://event-manager.fr/api/event/${todayEvent.id}/teams`)
               .then((res) => res.json())
               .then((teamData) => {
                 if (teamData.success) setTeams(teamData.data);

@@ -9,7 +9,7 @@ const EventsComing = ({ onSelectEvent }) => {
 
   // Récupération des événements
   useEffect(() => {
-    fetch("http://localhost:8000/api/event")
+    fetch("https://event-manager.fr/api/event")
       .then(res => res.json())
       .then(data => {
         if (data.success) setEvents(data.data);
@@ -21,7 +21,7 @@ const EventsComing = ({ onSelectEvent }) => {
   // Récupération des équipes pour chaque événement
   useEffect(() => {
     events.forEach(ev => {
-      fetch(`http://localhost:8000/api/event/${ev.id}/teams`)
+      fetch(`https://event-manager.fr/api/event/${ev.id}/teams`)
         .then(res => res.json())
         .then(data => {
           if (data.success) {

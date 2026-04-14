@@ -9,7 +9,7 @@ const ScoreBoardDetails = ({ event, onClose }) => {
 
   // Récupération des équipes
   useEffect(() => {
-    fetch(`http://localhost:8000/api/event/${event.id}/teams`)
+    fetch(`https://event-manager.fr/api/event/${event.id}/teams`)
       .then(res => res.json())
       .then(data => {
         if (data.success) setTeams(data.data);
