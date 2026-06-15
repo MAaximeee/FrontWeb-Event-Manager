@@ -1,37 +1,3 @@
-<<<<<<< HEAD
-import { useEffect, useMemo, useState } from "react";
-import {
-  eventDayStart,
-  getEventPhase,
-  PHASE_BADGE_CLASS,
-  startOfCalendarDay,
-} from "../utils/eventPresentation.js";
-
-function isSameCalendarDay(a, b) {
-  return startOfCalendarDay(a).getTime() === startOfCalendarDay(b).getTime();
-}
-
-function Calendar({
-  events = [],
-  onSelectEvent,
-  selectedEventId,
-  selectedDay: selectedDayProp,
-  onSelectedDayChange,
-}) {
-  const [internalDay, setInternalDay] = useState(() => startOfCalendarDay());
-  const listDay = selectedDayProp ?? internalDay;
-  const setListDay = onSelectedDayChange ?? setInternalDay;
-
-  const [currentDate, setCurrentDate] = useState(
-    () => new Date(listDay.getFullYear(), listDay.getMonth(), 1),
-  );
-
-  const listDayKey = listDay.getTime();
-
-  useEffect(() => {
-    setCurrentDate(new Date(listDay.getFullYear(), listDay.getMonth(), 1));
-  }, [listDayKey]);
-=======
 import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 
@@ -39,7 +5,6 @@ function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState([]);
->>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
 
   const monthNames = [
     "Janvier",
@@ -57,11 +22,6 @@ function Calendar() {
   ];
   const dayNames = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
-<<<<<<< HEAD
-  const today = useMemo(() => startOfCalendarDay(), []);
-
-=======
->>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
   const goToPreviousMonth = () =>
     setCurrentDate(
       new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1),
@@ -70,23 +30,6 @@ function Calendar() {
     setCurrentDate(
       new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1),
     );
-<<<<<<< HEAD
-  const goToToday = () => {
-    const now = startOfCalendarDay();
-    setListDay(now);
-    setCurrentDate(new Date(now.getFullYear(), now.getMonth(), 1));
-  };
-
-  const pickDay = (date) => {
-    setListDay(startOfCalendarDay(date));
-  };
-
-  const getEventsForDate = (date) => {
-    const target = startOfCalendarDay(date).getTime();
-    return events.filter((event) => {
-      const day = eventDayStart(event.dueDate);
-      return day && day.getTime() === target;
-=======
   const goToToday = () => setCurrentDate(new Date());
 
   useEffect(() => {
@@ -105,7 +48,6 @@ function Calendar() {
         eventDate.getMonth() === date.getMonth() &&
         eventDate.getFullYear() === date.getFullYear()
       );
->>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
     });
   };
 
@@ -132,19 +74,6 @@ function Calendar() {
   };
 
   const calendarDays = generateCalendarDays();
-<<<<<<< HEAD
-  const selectedEvents = getEventsForDate(listDay);
-
-  return (
-    <div className="h-full w-full flex flex-col flex-1 min-h-0">
-      <div className="flex items-center justify-between p-2 border-b border-zinc-700 text-white">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={goToPreviousMonth}
-            className="p-1 hover:bg-zinc-700 rounded"
-            aria-label="Mois précédent"
-=======
   const today = new Date();
   const selectedEvents = getEventsForDate(selectedDate);
 
@@ -156,7 +85,6 @@ function Calendar() {
           <button
             onClick={goToPreviousMonth}
             className="p-1 hover:bg-zinc-700 rounded"
->>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
           >
             ←
           </button>
@@ -164,30 +92,13 @@ function Calendar() {
             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </span>
           <button
-<<<<<<< HEAD
-            type="button"
             onClick={goToNextMonth}
             className="p-1 hover:bg-zinc-700 rounded"
-            aria-label="Mois suivant"
-=======
-            onClick={goToNextMonth}
-            className="p-1 hover:bg-zinc-700 rounded"
->>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
           >
             →
           </button>
         </div>
         <button
-<<<<<<< HEAD
-          type="button"
-          onClick={goToToday}
-          className="px-2 py-1 bg-orange-500 hover:bg-orange-600 rounded cursor-pointer text-xs text-white"
-        >
-          Aujourd&apos;hui
-        </button>
-      </div>
-
-=======
           onClick={goToToday}
           className="px-2 py-1 bg-orange-500 hover:bg-orange-600 rounded cursor-pointer text-xs text-white"
         >
@@ -196,7 +107,6 @@ function Calendar() {
       </div>
 
       {/* Jours de la semaine */}
->>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
       <div className="grid grid-cols-7 border-b border-zinc-700 text-center text-gray-400 text-xs">
         {dayNames.map((day) => (
           <div key={day} className="p-1">
@@ -205,30 +115,6 @@ function Calendar() {
         ))}
       </div>
 
-<<<<<<< HEAD
-      <div className="grid grid-cols-7">
-        {calendarDays.map((day, index) => {
-          const dayEvents = getEventsForDate(day.date);
-          const isSelected = isSameCalendarDay(day.date, listDay);
-          const isToday = isSameCalendarDay(day.date, today);
-
-          return (
-            <button
-              type="button"
-              key={index}
-              onClick={() => pickDay(day.date)}
-              className={`border-r border-b border-zinc-700 py-2 text-center text-xs cursor-pointer relative transition
-                ${!day.isCurrentMonth ? "text-gray-500 bg-zinc-900" : "text-white hover:bg-zinc-700"}
-                ${isSelected ? "bg-orange-500 text-white font-bold hover:bg-orange-600" : ""}
-                ${isToday && !isSelected ? "ring-1 ring-inset ring-orange-500/80 font-semibold" : ""}
-              `}
-            >
-              {day.date.getDate()}
-              {dayEvents.length > 0 && !isSelected && (
-                <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-orange-400 rounded-full" />
-              )}
-            </button>
-=======
       {/* Grille des jours */}
       <div className="grid grid-cols-7">
         {calendarDays.map((day, index) => {
@@ -252,21 +138,14 @@ function Calendar() {
                 <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-orange-400 rounded-full" />
               )}
             </div>
->>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
           );
         })}
       </div>
 
-<<<<<<< HEAD
-      <div className="border-t border-zinc-700 p-2 text-white min-h-[80px] flex-1">
-        <p className="text-[10px] text-gray-400 tracking-widest mb-2 capitalize">
-          {listDay.toLocaleDateString("fr-FR", {
-=======
       {/* Événements du jour sélectionné */}
       <div className="border-t border-zinc-700 p-2 text-white min-h-[80px] max-h-[100px]">
         <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-2">
           {selectedDate.toLocaleDateString("fr-FR", {
->>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
             weekday: "long",
             day: "numeric",
             month: "long",
@@ -278,31 +157,6 @@ function Calendar() {
             Aucun événement
           </p>
         ) : (
-<<<<<<< HEAD
-          <div className="flex flex-col gap-1 overflow-y-auto max-h-[80px]">
-            {selectedEvents.map((ev) => (
-              <button
-                type="button"
-                key={ev.id}
-                onClick={() => onSelectEvent?.(ev)}
-                className={`w-full flex items-center justify-between px-2 py-1.5 rounded text-[11px] text-left transition ${
-                  selectedEventId === ev.id
-                    ? "bg-zinc-500/25 hover:bg-zinc-500/25"
-                    : "hover:bg-white/5"
-                }`}
-              >
-                <span className="truncate font-medium">{ev.title}</span>
-                <span
-                  className={`shrink-0 ml-2 text-[9px] px-1 rounded ${PHASE_BADGE_CLASS[getEventPhase(ev)]}`}
-                >
-                  {getEventPhase(ev) === "live"
-                    ? "Live"
-                    : getEventPhase(ev) === "upcoming"
-                      ? "À venir"
-                      : "Passé"}
-                </span>
-              </button>
-=======
           <div className="flex flex-col gap-1 overflow-y-auto max-h-[60px]">
             {selectedEvents.map((event) => (
               <div
@@ -317,7 +171,6 @@ function Calendar() {
                   })}
                 </span>
               </div>
->>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
             ))}
           </div>
         )}

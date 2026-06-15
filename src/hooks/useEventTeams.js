@@ -22,9 +22,7 @@ export function useEventTeams({ eventId, currentUserId, canChooseTeam }) {
     setTeamsLoading(true);
 
     try {
-      const listRes = await api.get(
-        `/api/event/${eventId}/teams`,
-      );
+      const listRes = await api.get(`/api/event/${eventId}/teams`);
 
       const baseTeams = listRes.data?.data || [];
 
@@ -37,14 +35,8 @@ export function useEventTeams({ eventId, currentUserId, canChooseTeam }) {
 
             const details = detailRes.data?.data || {};
             const members = details.members || [];
-<<<<<<< HEAD
-            const normalizedCurrentUserId = Number(currentUserId);
-            const isCurrentUserMember = members.some(
-              (member) => Number(member.user?.id) === normalizedCurrentUserId,
-=======
             const isCurrentUserMember = members.some(
               (member) => member.user?.id === currentUserId,
->>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
             );
 
             return {

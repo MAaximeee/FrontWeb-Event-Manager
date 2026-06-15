@@ -1,22 +1,14 @@
 import { useState } from "react";
-<<<<<<< HEAD
-=======
-import Footer from "../components/footer";
->>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
 import { api } from "../api/client.js";
+import Footer from "../components/footer";
 
 const Contact = () => {
   const [form, setForm] = useState({
     subject: "",
     message: "",
   });
-<<<<<<< HEAD
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
-=======
   const [success, setSuccess] = useState(""); // message succès
   const [error, setError] = useState(""); // message erreur
->>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -28,27 +20,14 @@ const Contact = () => {
     setError("");
 
     try {
-<<<<<<< HEAD
+      // Envoi de la demande via la route API
       await api.post("/api/requests/create", {
-        objet: form.subject,
+        objet: form.subject, // correspond à la clé attendue par l'API
         message: form.message,
       });
 
       setSuccess("Demande envoyée avec succès !");
-      setForm({ subject: "", message: "" });
-=======
-      // Envoi de la demande via la route API
-      await api.post(
-        "/api/requests/create",
-        {
-          objet: form.subject, // correspond à la clé attendue par l'API
-          message: form.message,
-        },
-      );
-
-      setSuccess("Demande envoyée avec succès !");
       setForm({ subject: "", message: "" }); // reset formulaire
->>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
     } catch (err) {
       console.error(
         "Erreur création demande :",
@@ -131,12 +110,9 @@ const Contact = () => {
           </form>
         </div>
       </div>
-<<<<<<< HEAD
-=======
 
       {/* Footer */}
       <Footer />
->>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
     </div>
   );
 };
