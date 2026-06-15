@@ -1,0 +1,139 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import logo from "../assets/logo.svg";
+
+function Navbar() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [authToken, setAuthToken] = useState(() => localStorage.getItem("token"));
+  const location = useLocation();
+
+  // Recalcule la session a chaque changement de route (apres login sans refresh)
+  useEffect(() => {
+    setAuthToken(localStorage.getItem("token"));
+    setIsOpen(false);
+  }, [location.pathname]);
+
+  const { isAdmin, isOrganizer } = useMemo(() => {
+    try {
+      if (!authToken) {
+        return { isAdmin: false, isOrganizer: false };
+      }
+      const payload = JSON.parse(atob(authToken.split(".")[1]));
+      const roles = payload.roles || [];
+      const admin = roles.includes("ROLE_ADMIN");
+      const organizer = roles.includes("ROLE_ORGANISATEUR");
+      return {
+        isAdmin: admin,
+        isOrganizer: organizer,
+      };
+    } catch {
+      return { isAdmin: false, isOrganizer: false };
+    }
+  }, [authToken]);
+
+  const toggleMenu = () => {
+    if (authToken) {
+      setIsOpen(!isOpen);
+    }
+  };
+
+  return (
+    <nav className="fixed top-0 left-0 w-full flex justify-between items-center bg-black px-4 z-50">
+      <Link
+        to="/"
+        className="h-20 w-auto overflow-hidden flex justify-center items-center"
+        aria-label="Retour à l'accueil"
+      >
+        <img
+          src={logo}
+          alt="Logo"
+          className="m-4 h-8 w-auto object-contain text-white"
+        />
+      </Link>
+
+      <div className="flex items-center justify-center gap-2">
+        <ul className="flex">
+          <li className="mx-5">
+            <a href="/" className="text-white hover:text-orange-500">
+              Accueil
+            </a>
+          </li>
+          <li className="mx-5">
+            <a href="/calendrier" className="text-white hover:text-orange-500">
+              Calendrier
+            </a>
+          </li>
+          <li className="mx-5">
+            <a href="/contact" className="text-white hover:text-orange-500">
+              Contact
+            </a>
+          </li>
+        </ul>
+
+        <div className="relative">
+          <button
+            className="cursor-pointer flex items-center justify-center text-white rounded-lg bg-transparent hover:text-orange-500"
+            onClick={toggleMenu}
+          >
+            <svg
+              width="30"
+              height="30"
+              viewBox="0 0 15 15"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M0.877014 7.49988C0.877014 3.84219 3.84216 0.877045 7.49985 0.877045C11.1575 0.877045 14.1227 3.84219 14.1227 7.49988C14.1227 11.1575 11.1575 14.1227 7.49985 14.1227C3.84216 14.1227 0.877014 11.1575 0.877014 7.49988ZM7.49985 1.82704C4.36683 1.82704 1.82701 4.36686 1.82701 7.49988C1.82701 8.97196 2.38774 10.3131 3.30727 11.3213C4.19074 9.94119 5.73818 9.02499 7.50023 9.02499C9.26206 9.02499 10.8093 9.94097 11.6929 11.3208C12.6121 10.3127 13.1727 8.97172 13.1727 7.49988C13.1727 4.36686 10.6328 1.82704 7.49985 1.82704ZM10.9818 11.9787C10.2839 10.7795 8.9857 9.97499 7.50023 9.97499C6.01458 9.97499 4.71624 10.7797 4.01845 11.9791C4.97952 12.7272 6.18765 13.1727 7.49985 13.1727C8.81227 13.1727 10.0206 12.727 10.9818 11.9787ZM5.14999 6.50487C5.14999 5.207 6.20212 4.15487 7.49999 4.15487C8.79786 4.15487 9.84999 5.207 9.84999 6.50487C9.84999 7.80274 8.79786 8.85487 7.49999 8.85487C6.20212 8.85487 5.14999 7.80274 5.14999 6.50487ZM7.49999 5.10487C6.72679 5.10487 6.09999 5.73167 6.09999 6.50487C6.09999 7.27807 6.72679 7.90487 7.49999 7.90487C8.27319 7.90487 8.89999 7.27807 8.89999 6.50487C8.89999 5.73167 8.27319 5.10487 7.49999 5.10487Z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+
+          {isOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-[#F04406] text-white rounded shadow-lg z-50">
+              <Link
+                to="/profile"
+                className="block px-4 py-2 hover:bg-orange-700"
+                onClick={() => setIsOpen(false)}
+              >
+                Mon profil
+              </Link>
+
+              {isAdmin && (
+                <Link
+                  to="/dashboard"
+                  className="block px-4 py-2 hover:bg-orange-700"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Dashboard Admin
+                </Link>
+              )}
+
+              {isOrganizer && (
+                <Link
+                  to="/organisateur/evenements"
+                  className="block px-4 py-2 hover:bg-orange-700"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Gestion des événements
+                </Link>
+              )}
+
+              <button
+                onClick={() => {
+                  localStorage.removeItem("token");
+                  window.location.reload();
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-orange-700"
+              >
+                Déconnexion
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+export default Navbar;
