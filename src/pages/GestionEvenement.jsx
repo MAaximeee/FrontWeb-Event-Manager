@@ -13,27 +13,37 @@ const STATUS_BADGE_CLASS = {
   completed: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
 };
 
+<<<<<<< HEAD
 const SCORE_STATUS_OPTIONS = [
   { value: "scheduled", label: "Prévu" },
   { value: "in_progress", label: "En cours" },
   { value: "finished", label: "Terminé" },
 ];
 
+=======
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
 function OrganizerEvents() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+<<<<<<< HEAD
   const [activeTabByEvent, setActiveTabByEvent] = useState({});
+=======
+  const [expandedEventId, setExpandedEventId] = useState(null);
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
   const [participantsByEvent, setParticipantsByEvent] = useState({});
   const [teamsByEvent, setTeamsByEvent] = useState({});
   const [teamMembersByTeam, setTeamMembersByTeam] = useState({});
   const [expandedTeams, setExpandedTeams] = useState({});
   const [statusDraftByEvent, setStatusDraftByEvent] = useState({});
   const [statusSavingByEvent, setStatusSavingByEvent] = useState({});
+<<<<<<< HEAD
   const [scoreByEvent, setScoreByEvent] = useState({});
   const [scoreLoadingByEvent, setScoreLoadingByEvent] = useState({});
   const [scoreSavingByEvent, setScoreSavingByEvent] = useState({});
   const [scoreDraftByEvent, setScoreDraftByEvent] = useState({});
+=======
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
   const [actionMessage, setActionMessage] = useState("");
 
   const isAdmin = useMemo(
@@ -87,6 +97,7 @@ function OrganizerEvents() {
     if (!currentUser) return [];
     if (isAdmin) return events;
 
+<<<<<<< HEAD
     return events.filter(
       (event) => Number(event.creator?.id) === Number(currentUser.id),
     );
@@ -95,6 +106,11 @@ function OrganizerEvents() {
   const canManageEvent = (event) =>
     isAdmin || Number(event.creator?.id) === Number(currentUser?.id);
 
+=======
+    return events.filter((event) => event.creator?.id === currentUser.id);
+  }, [currentUser, events, isAdmin]);
+
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
   const loadParticipants = async (eventId) => {
     try {
       const res = await api.get(`/api/event/${eventId}/participants`);
@@ -111,6 +127,7 @@ function OrganizerEvents() {
     }
   };
 
+<<<<<<< HEAD
   const loadScore = async (eventId) => {
     setScoreLoadingByEvent((prev) => ({ ...prev, [eventId]: true }));
     try {
@@ -153,6 +170,26 @@ function OrganizerEvents() {
       }
     } finally {
       setScoreLoadingByEvent((prev) => ({ ...prev, [eventId]: false }));
+=======
+  const toggleParticipants = async (eventId) => {
+    const shouldOpen = expandedEventId !== eventId;
+    setExpandedEventId(shouldOpen ? eventId : null);
+
+    if (shouldOpen) {
+      const loaders = [];
+
+      if (!participantsByEvent[eventId]) {
+        loaders.push(loadParticipants(eventId));
+      }
+
+      if (!teamsByEvent[eventId]) {
+        loaders.push(loadTeams(eventId));
+      }
+
+      if (loaders.length > 0) {
+        await Promise.all(loaders);
+      }
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
     }
   };
 
@@ -248,6 +285,10 @@ function OrganizerEvents() {
       await api.delete(`/api/event/${eventId}`);
 
       setEvents((prev) => prev.filter((event) => event.id !== eventId));
+<<<<<<< HEAD
+=======
+      setExpandedEventId((prev) => (prev === eventId ? null : prev));
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
       setParticipantsByEvent((prev) => {
         const next = { ...prev };
         delete next[eventId];
@@ -263,6 +304,7 @@ function OrganizerEvents() {
         delete next[eventId];
         return next;
       });
+<<<<<<< HEAD
       setScoreByEvent((prev) => {
         const next = { ...prev };
         delete next[eventId];
@@ -273,6 +315,8 @@ function OrganizerEvents() {
         delete next[eventId];
         return next;
       });
+=======
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
       setActionMessage("Événement supprimé.");
     } catch (error) {
       setActionMessage(
@@ -281,6 +325,7 @@ function OrganizerEvents() {
     }
   };
 
+<<<<<<< HEAD
   useEffect(() => {
     managedEvents.forEach((event) => {
       setActiveTabByEvent((prev) => ({
@@ -384,6 +429,8 @@ function OrganizerEvents() {
     }
   };
 
+=======
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
   if (loading) {
     return <p className="text-white text-center mt-24">Chargement...</p>;
   }
@@ -416,6 +463,7 @@ function OrganizerEvents() {
             {managedEvents.map((event) => {
               const participants = participantsByEvent[event.id] || [];
               const teams = teamsByEvent[event.id] || [];
+<<<<<<< HEAD
               const activeTab = activeTabByEvent[event.id] || "";
               const currentStatus = event.status || "pending";
               const draftStatus = statusDraftByEvent[event.id] || currentStatus;
@@ -430,6 +478,10 @@ function OrganizerEvents() {
               };
               const score = scoreByEvent[event.id] ?? null;
               const canManage = canManageEvent(event);
+=======
+              const currentStatus = event.status || "pending";
+              const draftStatus = statusDraftByEvent[event.id] || currentStatus;
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
 
               return (
                 <div
@@ -468,7 +520,11 @@ function OrganizerEvents() {
                     </button>
                   </div>
 
+<<<<<<< HEAD
                   <div className="mt-4 border-t border-zinc-700 pt-4 flex flex-wrap items-center justify-end gap-2">
+=======
+                  <div className="mt-4 border-t border-zinc-700 pt-4 flex flex-wrap justify-end gap-2">
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
                     <select
                       className="w-36 rounded-lg bg-zinc-700 border border-zinc-600 px-2.5 py-1.5 text-xs focus:border-orange-500 focus:outline-none"
                       value={draftStatus}
@@ -489,6 +545,7 @@ function OrganizerEvents() {
 
                     <button
                       type="button"
+<<<<<<< HEAD
                       onClick={() =>
                         setActiveTabByEvent((prev) => ({
                           ...prev,
@@ -806,6 +863,145 @@ function OrganizerEvents() {
                       </section>
                     )}
                   </div>
+=======
+                      onClick={() => toggleParticipants(event.id)}
+                      className="rounded-lg bg-orange-500 hover:bg-orange-600 px-2.5 py-1.5 text-xs transition"
+                    >
+                      {expandedEventId === event.id
+                        ? "Masquer participants"
+                        : "Voir participants"}
+                    </button>
+                  </div>
+
+                  {expandedEventId === event.id && (
+                    <div className="mt-4 border-t border-zinc-700 pt-4">
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                        <section className="border border-zinc-700 bg-zinc-900/60 p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-sm font-semibold text-zinc-200">
+                              Participants
+                            </h3>
+                            <span className="text-xs text-zinc-400">
+                              {participants.length}
+                            </span>
+                          </div>
+
+                          {participants.length === 0 ? (
+                            <p className="text-sm text-zinc-400">
+                              Aucun participant.
+                            </p>
+                          ) : (
+                            <ul className="space-y-2 max-h-64 overflow-auto pr-1">
+                              {participants.map((participant) => (
+                                <li
+                                  key={participant.id}
+                                  className="text-sm text-zinc-300 flex items-center justify-between gap-3"
+                                >
+                                  <span>
+                                    {participant.user?.username ||
+                                      participant.user?.email ||
+                                      "Utilisateur"}
+                                  </span>
+                                  <span className="text-xs rounded bg-zinc-700 px-2 py-1 text-zinc-300">
+                                    {participant.status}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </section>
+
+                        {event.hasTeams && (
+                          <section className="border border-zinc-700 bg-zinc-900/60 p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="text-sm font-semibold text-zinc-200">
+                                Équipes
+                              </h3>
+                              <span className="text-xs text-zinc-400">
+                                {teams.length}
+                              </span>
+                            </div>
+
+                            {teams.length === 0 ? (
+                              <p className="text-sm text-zinc-400">
+                                Aucune équipe pour cet événement.
+                              </p>
+                            ) : (
+                              <div className="space-y-2 max-h-64 overflow-auto pr-1">
+                                {teams.map((team) => {
+                                  const members =
+                                    teamMembersByTeam[team.id] || [];
+                                  const teamKey = `${event.id}-${team.id}`;
+                                  const isTeamOpen = !!expandedTeams[teamKey];
+
+                                  return (
+                                    <div
+                                      key={team.id}
+                                      className="border border-zinc-700 bg-zinc-900/80 p-3"
+                                    >
+                                      <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                          <p className="text-sm font-medium text-white">
+                                            {team.name}
+                                          </p>
+                                          {team.maxSize && (
+                                            <p className="text-xs text-zinc-400">
+                                              Taille max : {team.maxSize}
+                                            </p>
+                                          )}
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            toggleTeamMembers(event.id, team.id)
+                                          }
+                                          className="rounded-md bg-orange-500 hover:bg-orange-600 px-3 py-1 text-xs transition"
+                                        >
+                                          {isTeamOpen
+                                            ? "Masquer utilisateurs"
+                                            : "Voir utilisateurs"}
+                                        </button>
+                                      </div>
+
+                                      {isTeamOpen && (
+                                        <div className="mt-3 border-t border-zinc-700 pt-2">
+                                          {members.length === 0 ? (
+                                            <p className="text-xs text-zinc-400">
+                                              Aucun utilisateur dans cette
+                                              équipe.
+                                            </p>
+                                          ) : (
+                                            <ul className="space-y-1">
+                                              {members.map((member) => (
+                                                <li
+                                                  key={member.id}
+                                                  className="text-xs text-zinc-300 flex items-center justify-between"
+                                                >
+                                                  <span>
+                                                    {member.user?.username ||
+                                                      member.user?.email ||
+                                                      "Utilisateur"}
+                                                  </span>
+                                                  <span className="rounded bg-zinc-700 px-2 py-0.5 text-[10px] text-zinc-300">
+                                                    {member.role}
+                                                  </span>
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </section>
+                        )}
+                      </div>
+                    </div>
+                  )}
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
                 </div>
               );
             })}

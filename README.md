@@ -12,7 +12,7 @@
 ### Variables d'environnement
 
 - Le frontend utilise `VITE_API_BASE_URL` pour appeler l'API.
-- Exemple attendu : `http://localhost:8000`.
+- Exemple attendu : `https://event-manager.fr`.
 
 ### Base de donnees / migrations
 

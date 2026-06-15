@@ -138,20 +138,31 @@ function EventDetailPage() {
   const isUserParticipant = useMemo(() => {
     if (!currentUser || !event || !Array.isArray(eventParticipants))
       return false;
+<<<<<<< HEAD
     const currentUserId = Number(currentUser.id);
     return eventParticipants.some(
       (p) =>
         Number(p.user?.id) === currentUserId ||
         Number(p.userId) === currentUserId,
+=======
+    return eventParticipants.some(
+      (p) => p.user?.id === currentUser.id || p.userId === currentUser.id,
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
     );
   }, [currentUser, event, eventParticipants]);
 
   const isConfirmedParticipant = useMemo(() => {
     if (!currentUser || !Array.isArray(eventParticipants)) return false;
+<<<<<<< HEAD
     const currentUserId = Number(currentUser.id);
     return eventParticipants.some((p) => {
       const uid = Number(p.user?.id || p.userId);
       return uid === currentUserId && p.status === "confirmed";
+=======
+    return eventParticipants.some((p) => {
+      const uid = p.user?.id || p.userId;
+      return uid === currentUser.id && p.status === "confirmed";
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
     });
   }, [currentUser, eventParticipants]);
 
@@ -163,7 +174,12 @@ function EventDetailPage() {
   const canChooseTeam =
     isStandardUser &&
     !!event?.hasTeams &&
+<<<<<<< HEAD
     isUserParticipant;
+=======
+    isUserParticipant &&
+    isConfirmedParticipant;
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
 
   const {
     teams,
@@ -546,8 +562,12 @@ function EventDetailPage() {
                     !isConfirmedParticipant && (
                       <p className="text-sm text-zinc-400">
                         Votre inscription est en attente de validation par
+<<<<<<< HEAD
                         l'organisateur, mais vous pouvez déjà choisir une
                         équipe.
+=======
+                        l'organisateur.
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
                       </p>
                     )}
 

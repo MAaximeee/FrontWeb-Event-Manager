@@ -10,13 +10,19 @@ const Register = () => {
     password: "",
     confirmPassword: "",
   });
+<<<<<<< HEAD
   const [error, setError] = useState("");
+=======
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
 
   const navigate = useNavigate();
 
   const handleChanges = (e) => {
     setValues({ ...values, [e.target.name]: e.target.value });
+<<<<<<< HEAD
     setError("");
+=======
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
   };
 
   const handleSubmit = async (e) => {
@@ -28,11 +34,16 @@ const Register = () => {
       !values.password ||
       !values.confirmPassword
     ) {
+<<<<<<< HEAD
       setError("Veuillez remplir tous les champs.");
+=======
+      alert("Veuillez remplir tous les champs");
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
       return;
     }
 
     if (values.password !== values.confirmPassword) {
+<<<<<<< HEAD
       setError("Les mots de passe ne correspondent pas.");
       return;
     }
@@ -51,6 +62,9 @@ const Register = () => {
       setError(
         "Le mot de passe doit contenir une minuscule, une majuscule, un chiffre et un caractere special.",
       );
+=======
+      alert("Les mots de passe ne correspondent pas");
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
       return;
     }
 
@@ -66,7 +80,11 @@ const Register = () => {
       }
     } catch (err) {
       console.error("Erreur inscription :", err);
+<<<<<<< HEAD
       setError(err.response?.data?.message || "Erreur lors de l'inscription.");
+=======
+      alert(err.response?.data?.message || "Erreur lors de l’inscription");
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
     }
   };
 
@@ -108,7 +126,11 @@ const Register = () => {
             <label htmlFor="password" className="text-black block mb-1"></label>
             <input
               type="password"
+<<<<<<< HEAD
               placeholder="Mot de passe"
+=======
+              placeholder="Password"
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
               name="password"
               onChange={handleChanges}
               className="w-full px-3 py-2 rounded bg-white text-black focus:outline-none focus:border-orange-500"
@@ -126,6 +148,7 @@ const Register = () => {
             />
           </div>
 
+<<<<<<< HEAD
           <p className="text-xs text-zinc-400">
             Le mot de passe doit contenir au moins 12 caracteres, avec une
             minuscule, une majuscule, un chiffre et un caractere special.
@@ -133,6 +156,8 @@ const Register = () => {
 
           {error && <p className="text-sm text-red-400">{error}</p>}
 
+=======
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
           <button
             type="submit"
             className="cursor-pointer w-full bg-orange-600 hover:bg-orange-700 text-black font-semibold py-2 rounded transition-colors"

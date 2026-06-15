@@ -15,6 +15,11 @@ export function CalendarGrid({
   canAddEvent,
   onToggleAddForm,
 }) {
+<<<<<<< HEAD
+=======
+  const isSelectable = typeof onSelectEvent === "function";
+
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
   return (
     <div className="flex h-full min-h-0 flex-col rounded-lg bg-zinc-800 p-4 sm:p-6">
       {/* Header avec contrôles */}
@@ -93,7 +98,13 @@ export function CalendarGrid({
               return (
                 <div
                   key={index}
+<<<<<<< HEAD
                   className={`border-r border-b border-zinc-700 p-2 min-h-[60px] hover:bg-orange-500 transition cursor-pointer ${
+=======
+                  className={`border-r border-b border-zinc-700 p-2 min-h-[60px] transition ${
+                    isSelectable ? "cursor-pointer hover:bg-orange-500" : ""
+                  } ${
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
                     !day.isCurrentMonth
                       ? "bg-zinc-900 text-gray-500"
                       : "text-white"
@@ -105,9 +116,17 @@ export function CalendarGrid({
                       key={event.id}
                       onClick={(e) => {
                         e.stopPropagation();
+<<<<<<< HEAD
                         onSelectEvent(event);
                       }}
                       className="bg-zinc-700 text-white text-xs p-1 rounded truncate mb-1 cursor-pointer hover:bg-zinc-600 transition"
+=======
+                        if (isSelectable) onSelectEvent(event);
+                      }}
+                      className={`bg-zinc-700 text-white text-xs p-1 rounded truncate mb-1 transition ${
+                        isSelectable ? "cursor-pointer hover:bg-zinc-600" : ""
+                      }`}
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
                       title={event.title}
                     >
                       {event.title}

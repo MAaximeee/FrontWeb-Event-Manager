@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.svg";
@@ -25,11 +26,34 @@ const Login = () => {
   const handleChanges = (e) => {
     setValues({ ...values, [e.target.name]: e.target.value });
     setError("");
+=======
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import logo from '../assets/logo.svg';
+import { api } from '../api/client.js';
+import '../index.css';
+
+const Login = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      navigate('/');
+    }
+  }, [navigate]);
+
+  const [values, setValues] = useState({ email: '', password: '' });
+
+  const handleChanges = (e) => {
+    setValues({ ...values, [e.target.name]: e.target.value });
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!values.email || !values.password) {
+<<<<<<< HEAD
       setError("Veuillez remplir tous les champs");
       return;
     }
@@ -47,6 +71,20 @@ const Login = () => {
       } else {
         setError(apiMessage || "Mot de passe ou email incorrect.");
       }
+=======
+      alert('Veuillez remplir tous les champs');
+      return;
+    }
+    try {
+      const response = await api.post('/api/login', values);
+      if (response.status === 200) {
+        localStorage.setItem('token', response.data.token);
+        navigate('/');
+      }
+    } catch (err) {
+      console.error('Erreur connexion :', err);
+      alert(err.response?.data?.message || 'Erreur lors de la connexion');
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
     }
   };
 
@@ -57,9 +95,13 @@ const Login = () => {
           <img src={logo} alt="Logo" className="h-20 w-auto" />
         </div>
         <hr className="border-white mb-6" />
+<<<<<<< HEAD
         <h2 className="text-2xl text-white font-bold text-center mb-6">
           Connectez-vous
         </h2>
+=======
+        <h2 className="text-2xl text-white font-bold text-center mb-6">Connectez-vous</h2>
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <input
@@ -78,7 +120,10 @@ const Login = () => {
               onChange={handleChanges}
               className="w-full px-3 py-2 rounded bg-white text-black focus:outline-none focus:border-orange-500"
             />
+<<<<<<< HEAD
             {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+=======
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
           </div>
           <button
             type="submit"
@@ -89,9 +134,13 @@ const Login = () => {
         </form>
         <div className="text-center mt-6 text-gray-400">
           <span>Pas de compte ? </span>
+<<<<<<< HEAD
           <Link to="/register" className="text-orange-500 hover:underline">
             S'inscrire
           </Link>
+=======
+          <Link to="/register" className="text-orange-500 hover:underline">S'inscrire</Link>
+>>>>>>> 17ba9c36e8a3e1e7833d387f6ecb484bd6ff0107
         </div>
       </div>
     </div>
