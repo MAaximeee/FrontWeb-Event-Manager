@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
-import { HomeEventPanel } from "./HomeEventPanel.jsx";
 import {
   eventHasTeamScore,
   getEventLiveElapsedSeconds,
@@ -12,6 +11,7 @@ import {
   memberDisplayName,
   parseEventDate,
 } from "../utils/eventPresentation.js";
+import { HomeEventPanel } from "./HomeEventPanel.jsx";
 
 const ScoreBoardDetails = ({ event }) => {
   const navigate = useNavigate();
@@ -203,7 +203,9 @@ const ScoreBoardDetails = ({ event }) => {
           <div className="flex flex-wrap justify-center gap-x-10 gap-y-6 max-w-md mx-auto">
             {teamsDetail.map((team) => (
               <div key={team.id} className="min-w-[8.5rem] text-center">
-                <h4 className="text-orange-400 font-semibold mb-2">{team.name}</h4>
+                <h4 className="text-orange-400 font-semibold mb-2">
+                  {team.name}
+                </h4>
                 {(team.members || []).length === 0 ? (
                   <p className="text-xs text-gray-500">Aucun joueur</p>
                 ) : (

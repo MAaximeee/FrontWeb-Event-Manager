@@ -5,7 +5,10 @@ import EventsComing from "../components/EventsComing";
 import Scoreboard from "../components/Scoreboard";
 import ScoreBoardDetails from "../components/ScoreBoardDetails";
 import { useEvents } from "../hooks/useEvents";
-import { eventDayStart, startOfCalendarDay } from "../utils/eventPresentation.js";
+import {
+  eventDayStart,
+  startOfCalendarDay,
+} from "../utils/eventPresentation.js";
 
 function Home() {
   const [selectedEvent, setSelectedEvent] = useState(null);

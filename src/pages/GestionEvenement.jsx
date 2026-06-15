@@ -468,7 +468,11 @@ function OrganizerEvents() {
                     </button>
                   </div>
 
+<<<<<<< HEAD
                   <div className="mt-4 border-t border-zinc-700 pt-4 flex flex-wrap items-center justify-end gap-2">
+=======
+                  <div className="mt-4 border-t border-zinc-700 pt-4 flex flex-wrap justify-end gap-2">
+>>>>>>> 138995d12b1591c0b4841205a170de7e6f46c490
                     <select
                       className="w-36 rounded-lg bg-zinc-700 border border-zinc-600 px-2.5 py-1.5 text-xs focus:border-orange-500 focus:outline-none"
                       value={draftStatus}
@@ -489,6 +493,7 @@ function OrganizerEvents() {
 
                     <button
                       type="button"
+<<<<<<< HEAD
                       onClick={() =>
                         setActiveTabByEvent((prev) => ({
                           ...prev,
@@ -540,6 +545,20 @@ function OrganizerEvents() {
 
                   <div className="mt-4 border-t border-zinc-700 pt-4">
                       {activeTab === "details" && (
+=======
+                      onClick={() => toggleParticipants(event.id)}
+                      className="rounded-lg bg-orange-500 hover:bg-orange-600 px-2.5 py-1.5 text-xs transition"
+                    >
+                      {expandedEventId === event.id
+                        ? "Masquer participants"
+                        : "Voir participants"}
+                    </button>
+                  </div>
+
+                  {expandedEventId === event.id && (
+                    <div className="mt-4 border-t border-zinc-700 pt-4">
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+>>>>>>> 138995d12b1591c0b4841205a170de7e6f46c490
                         <section className="border border-zinc-700 bg-zinc-900/60 p-3">
                           <div className="flex items-center justify-between mb-2">
                             <h3 className="text-sm font-semibold text-zinc-200">
@@ -574,6 +593,7 @@ function OrganizerEvents() {
                             </ul>
                           )}
                         </section>
+<<<<<<< HEAD
                       )}
 
                       {activeTab === "teams" && (
@@ -804,6 +824,99 @@ function OrganizerEvents() {
                         </section>
                       )}
                   </div>
+=======
+
+                        {event.hasTeams && (
+                          <section className="border border-zinc-700 bg-zinc-900/60 p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="text-sm font-semibold text-zinc-200">
+                                Équipes
+                              </h3>
+                              <span className="text-xs text-zinc-400">
+                                {teams.length}
+                              </span>
+                            </div>
+
+                            {teams.length === 0 ? (
+                              <p className="text-sm text-zinc-400">
+                                Aucune équipe pour cet événement.
+                              </p>
+                            ) : (
+                              <div className="space-y-2 max-h-64 overflow-auto pr-1">
+                                {teams.map((team) => {
+                                  const members =
+                                    teamMembersByTeam[team.id] || [];
+                                  const teamKey = `${event.id}-${team.id}`;
+                                  const isTeamOpen = !!expandedTeams[teamKey];
+
+                                  return (
+                                    <div
+                                      key={team.id}
+                                      className="border border-zinc-700 bg-zinc-900/80 p-3"
+                                    >
+                                      <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                          <p className="text-sm font-medium text-white">
+                                            {team.name}
+                                          </p>
+                                          {team.maxSize && (
+                                            <p className="text-xs text-zinc-400">
+                                              Taille max : {team.maxSize}
+                                            </p>
+                                          )}
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            toggleTeamMembers(event.id, team.id)
+                                          }
+                                          className="rounded-md bg-orange-500 hover:bg-orange-600 px-3 py-1 text-xs transition"
+                                        >
+                                          {isTeamOpen
+                                            ? "Masquer utilisateurs"
+                                            : "Voir utilisateurs"}
+                                        </button>
+                                      </div>
+
+                                      {isTeamOpen && (
+                                        <div className="mt-3 border-t border-zinc-700 pt-2">
+                                          {members.length === 0 ? (
+                                            <p className="text-xs text-zinc-400">
+                                              Aucun utilisateur dans cette
+                                              équipe.
+                                            </p>
+                                          ) : (
+                                            <ul className="space-y-1">
+                                              {members.map((member) => (
+                                                <li
+                                                  key={member.id}
+                                                  className="text-xs text-zinc-300 flex items-center justify-between"
+                                                >
+                                                  <span>
+                                                    {member.user?.username ||
+                                                      member.user?.email ||
+                                                      "Utilisateur"}
+                                                  </span>
+                                                  <span className="rounded bg-zinc-700 px-2 py-0.5 text-[10px] text-zinc-300">
+                                                    {member.role}
+                                                  </span>
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </section>
+                        )}
+                      </div>
+                    </div>
+                  )}
+>>>>>>> 138995d12b1591c0b4841205a170de7e6f46c490
                 </div>
               );
             })}

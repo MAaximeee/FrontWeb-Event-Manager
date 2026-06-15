@@ -22,9 +22,7 @@ export function useEventTeams({ eventId, currentUserId, canChooseTeam }) {
     setTeamsLoading(true);
 
     try {
-      const listRes = await api.get(
-        `/api/event/${eventId}/teams`,
-      );
+      const listRes = await api.get(`/api/event/${eventId}/teams`);
 
       const baseTeams = listRes.data?.data || [];
 

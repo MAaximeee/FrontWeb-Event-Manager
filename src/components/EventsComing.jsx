@@ -97,7 +97,9 @@ function MatchListRow({ event, teams, score, isSelected, onSelect }) {
         <div className="flex w-[6.75rem] min-w-[6.75rem] shrink-0 flex-col items-center justify-center border-r border-zinc-700 py-2.5 pl-3 sm:pl-4 pr-2.5 sm:pr-3">
           {status.live ? (
             <>
-              <span className="text-[10px] font-bold text-orange-500">LIVE</span>
+              <span className="text-[10px] font-bold text-orange-500">
+                LIVE
+              </span>
               {status.secondary && (
                 <span className="text-[10px] font-mono tabular-nums text-orange-400/80 mt-0.5">
                   {status.secondary}
@@ -132,7 +134,9 @@ function MatchListRow({ event, teams, score, isSelected, onSelect }) {
                 >
                   {nameA.charAt(0)}
                 </span>
-                <span className="flex-1 truncate text-sm text-white">{nameA}</span>
+                <span className="flex-1 truncate text-sm text-white">
+                  {nameA}
+                </span>
                 {scoreA !== null && (
                   <span className="text-sm font-bold tabular-nums text-orange-400 w-5 text-right">
                     {scoreA}
@@ -146,7 +150,9 @@ function MatchListRow({ event, teams, score, isSelected, onSelect }) {
                 >
                   {nameB.charAt(0)}
                 </span>
-                <span className="flex-1 truncate text-sm text-white">{nameB}</span>
+                <span className="flex-1 truncate text-sm text-white">
+                  {nameB}
+                </span>
                 {scoreB !== null && (
                   <span className="text-sm font-bold tabular-nums text-orange-400 w-5 text-right">
                     {scoreB}
@@ -156,7 +162,9 @@ function MatchListRow({ event, teams, score, isSelected, onSelect }) {
             </div>
           ) : (
             <div>
-              <p className="text-sm font-medium text-white truncate">{event.title}</p>
+              <p className="text-sm font-medium text-white truncate">
+                {event.title}
+              </p>
               <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-2 flex-wrap">
                 <span>{formatSportType(event.type)}</span>
                 <span
@@ -166,7 +174,8 @@ function MatchListRow({ event, teams, score, isSelected, onSelect }) {
                 </span>
                 {participantsCount > 0 && (
                   <span>
-                    · {participantsCount} inscrit{participantsCount > 1 ? "s" : ""}
+                    · {participantsCount} inscrit
+                    {participantsCount > 1 ? "s" : ""}
                   </span>
                 )}
               </p>

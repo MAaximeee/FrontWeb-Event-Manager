@@ -5,6 +5,7 @@ import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
 import RouteProteger from "./components/RouteProteger";
 import ScoreBoardDetails from "./components/ScoreBoardDetails";
+import NoPage from "./pages/404";
 import Calendrier from "./pages/Calendrier";
 import Contact from "./pages/Contact";
 import Dashboard from "./pages/DashboardAdmin";
@@ -12,8 +13,7 @@ import EventDetailPage from "./pages/EventDetailPage";
 import GestionEvenements from "./pages/GestionEvenement";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
-import NoPage from "./pages/404";
-import Profile from "./pages/Profile";
+import Profile from "./pages/profile";
 import Register from "./pages/Register";
 import RequestDashboard from "./pages/RequestDashboard";
 import UsersDashboard from "./pages/UsersDashboard";
@@ -58,7 +58,6 @@ function App() {
                 element={<GestionEvenements />}
               />
             </Route>
-
             <Route path="*" element={<NoPage />} />
           </Routes>
         </main>

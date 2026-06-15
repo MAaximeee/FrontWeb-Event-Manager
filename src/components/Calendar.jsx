@@ -47,8 +47,11 @@ function Calendar({
   ];
   const dayNames = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
+<<<<<<< HEAD
   const today = useMemo(() => startOfCalendarDay(), []);
 
+=======
+>>>>>>> 138995d12b1591c0b4841205a170de7e6f46c490
   const goToPreviousMonth = () =>
     setCurrentDate(
       new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1),

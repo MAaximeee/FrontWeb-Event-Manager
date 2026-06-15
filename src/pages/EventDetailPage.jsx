@@ -161,9 +161,7 @@ function EventDetailPage() {
     !currentUser?.roles?.includes("ROLE_ADMIN");
 
   const canChooseTeam =
-    isStandardUser &&
-    !!event?.hasTeams &&
-    isUserParticipant;
+    isStandardUser && !!event?.hasTeams && isUserParticipant;
 
   const {
     teams,
