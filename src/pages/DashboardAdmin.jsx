@@ -4,7 +4,9 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-zinc-900 p-8 text-white flex items-center justify-center">
       <div className="w-full">
-        <h1 className="text-3xl font-bold mb-6 text-center text-orange-500">Dashboard Admin</h1>
+        <h1 className="text-3xl font-bold mb-6 text-center text-orange-500">
+          Dashboard Admin
+        </h1>
 
         <div className="flex-1 flex items-center">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-6xl mx-auto w-full">

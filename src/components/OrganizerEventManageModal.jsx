@@ -130,9 +130,7 @@ export function OrganizerEventManageModal({
           <select
             className="w-full sm:w-36 rounded-lg bg-zinc-700 border border-zinc-600 px-2.5 py-1.5 text-xs focus:border-orange-500 focus:outline-none disabled:opacity-50"
             value={draftStatus}
-            onChange={(e) =>
-              onStatusChange(e.target.value, currentStatus)
-            }
+            onChange={(e) => onStatusChange(e.target.value, currentStatus)}
             disabled={!canManage || statusSaving}
           >
             <option value="pending">En attente</option>
@@ -268,12 +266,11 @@ export function OrganizerEventManageModal({
                       Date et heure de début
                     </p>
                     <p className="rounded-lg bg-zinc-800/80 border border-zinc-700 px-3 py-2 text-sm text-zinc-300">
-                      {formatEventDateTime(event.dueDate) ||
-                        "Non définie"}
+                      {formatEventDateTime(event.dueDate) || "Non définie"}
                     </p>
                     <p className="mt-1 text-[11px] text-zinc-500">
-                      Définie à la création de l&apos;événement (non
-                      modifiable ici).
+                      Définie à la création de l&apos;événement (non modifiable
+                      ici).
                     </p>
                   </div>
 

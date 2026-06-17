@@ -19,9 +19,7 @@ import {
 function ListModeTabs({ mode, onModeChange }) {
   const tabClass = (active) =>
     `flex-1 rounded-md px-2 py-1.5 text-[11px] font-semibold transition ${
-      active
-        ? "bg-orange-500 text-white"
-        : "text-gray-400 hover:text-zinc-200"
+      active ? "bg-orange-500 text-white" : "text-gray-400 hover:text-zinc-200"
     }`;
 
   return (
@@ -196,22 +194,20 @@ function MatchListRow({ event, teams, score, isSelected, onSelect }) {
                   >
                     {nameA.charAt(0)}
                   </span>
-                  <span
-                    className={`flex-1 truncate text-xs ${styleA.name}`}
-                  >
+                  <span className={`flex-1 truncate text-xs ${styleA.name}`}>
                     {nameA}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 min-h-[1.125rem]">
                   <span
                     className="h-4 w-4 shrink-0 rounded-full text-[8px] font-bold flex items-center justify-center text-white"
-                    style={{ backgroundColor: teamAccentColor(teamB, "#52525b") }}
+                    style={{
+                      backgroundColor: teamAccentColor(teamB, "#52525b"),
+                    }}
                   >
                     {nameB.charAt(0)}
                   </span>
-                  <span
-                    className={`flex-1 truncate text-xs ${styleB.name}`}
-                  >
+                  <span className={`flex-1 truncate text-xs ${styleB.name}`}>
                     {nameB}
                   </span>
                 </div>

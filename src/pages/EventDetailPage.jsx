@@ -312,8 +312,7 @@ function EventDetailPage() {
               )}
               <div className="mt-4 flex flex-wrap gap-2">
                 <span className="inline-flex items-center rounded-full bg-zinc-700 px-3 py-1 text-xs font-medium text-zinc-200">
-                  Statut :{" "}
-                  {formatEventStatusLabelForEvent(event)}
+                  Statut : {formatEventStatusLabelForEvent(event)}
                 </span>
                 {sportBadge && (
                   <span className="inline-flex items-center rounded-full bg-zinc-700 px-3 py-1 text-xs font-medium text-zinc-200">
@@ -359,7 +358,9 @@ function EventDetailPage() {
                     {organizerName || "—"}
                   </p>
                   {isAdmin && event.creator.email && (
-                    <p className="text-sm text-zinc-400">{event.creator.email}</p>
+                    <p className="text-sm text-zinc-400">
+                      {event.creator.email}
+                    </p>
                   )}
                 </div>
               ) : (

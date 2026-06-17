@@ -4,7 +4,9 @@ import logo from "../assets/logo.svg";
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [authToken, setAuthToken] = useState(() => localStorage.getItem("token"));
+  const [authToken, setAuthToken] = useState(() =>
+    localStorage.getItem("token"),
+  );
   const location = useLocation();
 
   // Recalcule la session a chaque changement de route (apres login sans refresh)

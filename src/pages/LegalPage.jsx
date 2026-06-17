@@ -9,7 +9,9 @@ export function LegalPage() {
     return (
       <div className="w-full px-4 sm:px-6 lg:px-8 pt-24 pb-16 text-white">
         <div className="mx-auto max-w-2xl">
-          <h1 className="text-2xl font-bold text-orange-500">Document introuvable</h1>
+          <h1 className="text-2xl font-bold text-orange-500">
+            Document introuvable
+          </h1>
           <p className="mt-4 text-sm text-zinc-400">
             Cette page légale n&apos;existe pas.
           </p>

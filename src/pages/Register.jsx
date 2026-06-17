@@ -139,9 +139,7 @@ const Register = () => {
             minuscule, une majuscule, un chiffre et un caractere special.
           </p>
 
-          <label
-            className="flex items-start gap-2 text-xs text-zinc-300 cursor-pointer"
-          >
+          <label className="flex items-start gap-2 text-xs text-zinc-300 cursor-pointer">
             <input
               type="checkbox"
               checked={acceptedTerms}

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
 import { mergeUserRoles, userIsAdmin } from "../utils/auth.js";
 import {
+  canManageEventFromHome,
   eventHasTeamScore,
   getEventLiveElapsedSeconds,
   getEventPhase,
@@ -12,6 +13,7 @@ import {
   memberDisplayName,
   parseEventDate,
 } from "../utils/eventPresentation.js";
+import { HomeOrganizerEventManage } from "./HomeOrganizerEventManage.jsx";
 import { HomeEventPanel } from "./HomeEventPanel.jsx";
 
 const ScoreBoardDetails = ({ event }) => {
@@ -25,10 +27,12 @@ const ScoreBoardDetails = ({ event }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [timeToStart, setTimeToStart] = useState(null);
+  const [showHomeManage, setShowHomeManage] = useState(false);
 
   useEffect(() => {
     setEventDetails(event);
     setShowDetails(false);
+    setShowHomeManage(false);
   }, [event]);
 
   useEffect(() => {
@@ -116,8 +120,7 @@ const ScoreBoardDetails = ({ event }) => {
     if (!ev) return;
 
     if (isEventInProgress(ev)) {
-      const tick = () =>
-        setElapsed(getEventLiveElapsedSeconds(ev, scoreMatch));
+      const tick = () => setElapsed(getEventLiveElapsedSeconds(ev, scoreMatch));
       tick();
       const interval = setInterval(tick, 1000);
       return () => clearInterval(interval);
@@ -166,27 +169,36 @@ const ScoreBoardDetails = ({ event }) => {
     );
 
   const canGoToParticipation = isRegistered && phase === "upcoming";
-  const canManageAsOrganizer =
-    currentUser &&
-    (userIsAdmin(currentUser) ||
-      Number(ev.creator?.id) === Number(currentUser.id));
+  const canManageFromHome =
+    currentUser && canManageEventFromHome(currentUser, ev);
 
-  const detailButtonLabel = canManageAsOrganizer
-    ? userIsAdmin(currentUser)
-      ? "Gérer l'événement"
-      : "Gérer mon événement"
-    : canGoToParticipation
-      ? "Accéder à mon événement"
-      : "Voir le détail";
+  const detailButtonLabel = showHomeManage
+    ? "Masquer la gestion"
+    : canManageFromHome
+      ? userIsAdmin(currentUser)
+        ? "Gérer l'événement"
+        : "Gérer mon événement"
+      : canGoToParticipation
+        ? "Accéder à mon événement"
+        : "Voir le détail";
+
+  const reloadEventDetails = async () => {
+    if (!ev?.id) return;
+    try {
+      const eventRes = await api.get(`/api/event/${ev.id}`);
+      const fullEvent = eventRes.data?.data;
+      if (fullEvent) setEventDetails(fullEvent);
+    } catch {
+      /* ignore */
+    }
+  };
 
   const detailButton = (
     <button
       type="button"
       onClick={() => {
-        if (canManageAsOrganizer) {
-          navigate("/organisateur/evenements", {
-            state: { openEventId: ev.id },
-          });
+        if (canManageFromHome) {
+          setShowHomeManage((open) => !open);
           return;
         }
         navigate(`/calendrier/evenement/${ev.id}`, {
@@ -213,6 +225,19 @@ const ScoreBoardDetails = ({ event }) => {
         raceResults={raceResults}
         detailAction={detailButton}
       />
+
+      {showHomeManage && canManageFromHome && (
+        <HomeOrganizerEventManage
+          event={ev}
+          currentUser={currentUser}
+          onClose={() => setShowHomeManage(false)}
+          onEventUpdated={() => reloadEventDetails()}
+          onEventDeleted={() => {
+            setShowHomeManage(false);
+            reloadEventDetails();
+          }}
+        />
+      )}
 
       {showTeamScore && (
         <div className="flex justify-center border-t border-zinc-700/80 mt-4 pt-4">

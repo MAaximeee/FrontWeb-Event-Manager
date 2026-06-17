@@ -5,6 +5,8 @@
  * Ca évite de dupliquer la meme logique dans Home, Scoreboard, EventsComing, etc.
  */
 
+import { userIsAdmin, userIsOrganizer } from "./auth.js";
+
 export function formatCountdown(seconds) {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -450,6 +452,18 @@ export function getEventOrganizerCapabilities(event) {
     showScoreTab: teamScore,
     showRaceTab: individual,
   };
+}
+
+/**
+ * Bouton « Gérer l'événement » sur l'accueil (admin ou créateur).
+ */
+export function canManageEventFromHome(user, event) {
+  if (!user || !event) return false;
+  if (userIsAdmin(user)) return true;
+  if (!userIsOrganizer(user)) return false;
+  const uid = Number(user.id);
+  const creatorId = Number(event.creator?.id);
+  return Number.isFinite(uid) && uid === creatorId;
 }
 
 /** Saisie organisateur : « 42:05 », « 1:02:30 » ou secondes. */

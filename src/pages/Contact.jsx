@@ -17,7 +17,10 @@ function FormAlert({ type, children }) {
   }
 
   return (
-    <div role="alert" className="rounded-lg border border-red-500 bg-red-500/10 p-4">
+    <div
+      role="alert"
+      className="rounded-lg border border-red-500 bg-red-500/10 p-4"
+    >
       <p className="text-sm text-red-400">{children}</p>
     </div>
   );

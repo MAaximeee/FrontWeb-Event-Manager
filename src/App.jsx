@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
-import Footer from "./components/Footer";
-import Navbar from "./components/Navbar";
+import Footer from "./components/footer.jsx";
+import Navbar from "./components/navbar.jsx";
 import RouteProteger from "./components/RouteProteger";
 import ScoreBoardDetails from "./components/ScoreBoardDetails";
 import Calendrier from "./pages/Calendrier";

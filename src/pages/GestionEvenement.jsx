@@ -1,11 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { OrganizerEventManageModal } from "../components/OrganizerEventManageModal.jsx";
 import { api } from "../api/client.js";
-import {
-  normalizeSessionUser,
-  userIsAdmin,
-} from "../utils/auth.js";
+import { normalizeSessionUser, userIsAdmin } from "../utils/auth.js";
 import {
   buildEventUpdatePayload,
   buildRaceStandings,
@@ -25,9 +21,6 @@ import {
 } from "../utils/eventPresentation.js";
 
 function GestionEvenement() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const openedFromHomeRef = useRef(false);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
@@ -144,19 +137,6 @@ function GestionEvenement() {
     }
   };
 
-  useEffect(() => {
-    if (loading || openedFromHomeRef.current) return;
-    const openId = location.state?.openEventId;
-    if (openId == null) return;
-
-    const id = Number(openId);
-    if (!managedEvents.some((event) => Number(event.id) === id)) return;
-
-    openedFromHomeRef.current = true;
-    openEventModal(id);
-    navigate("/organisateur/evenements", { replace: true, state: null });
-  }, [loading, managedEvents, location.state, navigate]);
-
   const closeEventModal = () => setSelectedEventId(null);
 
   const loadParticipants = async (eventId) => {
@@ -238,9 +218,7 @@ function GestionEvenement() {
           if (!drafts[pid]) {
             drafts[pid] = {
               place:
-                row.place != null && row.place !== ""
-                  ? String(row.place)
-                  : "",
+                row.place != null && row.place !== "" ? String(row.place) : "",
               temps:
                 row.temps != null && row.temps !== ""
                   ? formatRaceDuration(Number(row.temps))
@@ -319,10 +297,7 @@ function GestionEvenement() {
           payload,
         );
       } else {
-        await api.post(
-          `/api/event/${eventId}/resultat-course/create`,
-          payload,
-        );
+        await api.post(`/api/event/${eventId}/resultat-course/create`, payload);
       }
       setActionMessage("Résultat enregistré.");
       await loadRaceResults(eventId);
@@ -664,9 +639,7 @@ function GestionEvenement() {
             Gestion des événements
           </h1>
           <p className="text-zinc-400">
-            {isAdmin
-              ? "Administrateur : tous les événements. "
-              : ""}
+            {isAdmin ? "Administrateur : tous les événements. " : ""}
             Cliquez sur un événement pour tout gérer dans une fenêtre.
           </p>
         </div>
@@ -685,8 +658,7 @@ function GestionEvenement() {
           <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {managedEvents.map((event) => {
               const currentStatus = event.status || "pending";
-              const draftStatus =
-                statusDraftByEvent[event.id] || currentStatus;
+              const draftStatus = statusDraftByEvent[event.id] || currentStatus;
               const organizer = eventOrganizerName(event);
 
               return (
@@ -770,11 +742,7 @@ function GestionEvenement() {
                 ...prev,
                 [selectedEvent.id]: nextStatus,
               }));
-              handleStatusUpdate(
-                selectedEvent.id,
-                nextStatus,
-                previousStatus,
-              );
+              handleStatusUpdate(selectedEvent.id, nextStatus, previousStatus);
             }}
             onDelete={() => handleDeleteEvent(selectedEvent.id)}
             score={scoreByEvent[selectedEvent.id] ?? null}
@@ -794,9 +762,7 @@ function GestionEvenement() {
             }
             onSaveScore={() => handleSaveScore(selectedEvent)}
             raceLoading={!!raceLoadingByEvent[selectedEvent.id]}
-            raceDraftByParticipant={
-              raceDraftByEvent[selectedEvent.id] || {}
-            }
+            raceDraftByParticipant={raceDraftByEvent[selectedEvent.id] || {}}
             raceSavingKey={raceSavingKey}
             onRaceDraftChange={(participantId, field, value) =>
               handleRaceDraftChange(
