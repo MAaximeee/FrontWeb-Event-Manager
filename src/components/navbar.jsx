@@ -38,42 +38,52 @@ function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 w-full flex justify-between items-center bg-black px-4 z-50">
+    <nav className="fixed inset-x-0 top-0 z-[100] box-border flex w-full max-w-full min-w-0 items-center justify-between gap-1 overflow-visible bg-black px-2 sm:gap-2 sm:px-3 md:px-4">
       <Link
         to="/"
-        className="h-20 w-auto overflow-hidden flex justify-center items-center"
+        className="flex h-20 shrink-0 items-center overflow-hidden pl-1 pr-2 sm:px-2"
         aria-label="Retour à l'accueil"
       >
         <img
           src={logo}
           alt="Logo"
-          className="m-4 h-8 w-auto object-contain text-white"
+          className="h-8 w-auto object-contain"
         />
       </Link>
 
-      <div className="flex items-center justify-center gap-2">
-        <ul className="flex">
-          <li className="mx-5">
-            <a href="/" className="text-white hover:text-orange-500">
+      <div className="flex min-w-0 shrink items-center justify-end gap-0.5 sm:gap-1 md:gap-2">
+        <ul className="flex min-w-0 shrink items-center">
+          <li className="px-1.5 sm:px-2 md:px-3">
+            <a href="/" className="whitespace-nowrap text-sm text-white hover:text-orange-500">
               Accueil
             </a>
           </li>
-          <li className="mx-5">
-            <a href="/calendrier" className="text-white hover:text-orange-500">
+          <li className="px-1.5 sm:px-2 md:px-3">
+            <a
+              href="/calendrier"
+              className="whitespace-nowrap text-sm text-white hover:text-orange-500"
+            >
               Calendrier
             </a>
           </li>
-          <li className="mx-5">
-            <a href="/contact" className="text-white hover:text-orange-500">
+          <li className="px-1.5 sm:px-2 md:px-3">
+            <a
+              href="/contact"
+              className="whitespace-nowrap text-sm text-white hover:text-orange-500"
+            >
               Contact
             </a>
           </li>
         </ul>
 
-        <div className="relative">
+        <div className="relative z-[101]">
           <button
+            type="button"
             className="cursor-pointer flex items-center justify-center text-white rounded-lg bg-transparent hover:text-orange-500"
             onClick={toggleMenu}
+            aria-expanded={isOpen}
+            aria-haspopup="menu"
+            aria-label="Menu compte"
           >
             <svg
               width="30"
@@ -90,10 +100,13 @@ function Navbar() {
           </button>
 
           {isOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-[#F04406] text-white rounded shadow-lg z-50">
+            <div
+              role="menu"
+              className="absolute right-0 top-full z-[102] mt-2 w-48 rounded bg-orange-500 text-white shadow-lg ring-1 ring-black/20"
+            >
               <Link
                 to="/profile"
-                className="block px-4 py-2 hover:bg-orange-700"
+                className="block px-4 py-2 hover:bg-orange-600"
                 onClick={() => setIsOpen(false)}
               >
                 Mon profil
@@ -102,17 +115,17 @@ function Navbar() {
               {isAdmin && (
                 <Link
                   to="/dashboard"
-                  className="block px-4 py-2 hover:bg-orange-700"
+                  className="block px-4 py-2 hover:bg-orange-600"
                   onClick={() => setIsOpen(false)}
                 >
                   Dashboard Admin
                 </Link>
               )}
 
-              {isOrganizer && (
+              {isOrganizer && !isAdmin && (
                 <Link
                   to="/organisateur/evenements"
-                  className="block px-4 py-2 hover:bg-orange-700"
+                  className="block px-4 py-2 hover:bg-orange-600"
                   onClick={() => setIsOpen(false)}
                 >
                   Gestion des événements
@@ -124,7 +137,7 @@ function Navbar() {
                   localStorage.removeItem("token");
                   window.location.reload();
                 }}
-                className="w-full text-left px-4 py-2 hover:bg-orange-700"
+                className="w-full text-left px-4 py-2 hover:bg-orange-600"
               >
                 Déconnexion
               </button>

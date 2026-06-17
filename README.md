@@ -45,7 +45,7 @@
 - `src/App.jsx` : configuration des routes principales.
 - `src/api/client.js` : client Axios central (base URL + JWT auto).
 - `src/utils/auth.js` : utilitaires token/authentification.
-- `src/components/RouteProteger.jsx` : protection des routes selon token/rôles.
+- `src/components/ProtectedRoute.jsx` : protection des routes selon token/rôles.
 
 - `src/pages/Home.jsx` : page d'accueil utilisateur.
 - `src/pages/Calendrier.jsx` : calendrier principal + ajout d'événement + participation.

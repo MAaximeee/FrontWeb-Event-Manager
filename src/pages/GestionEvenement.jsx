@@ -1,25 +1,33 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { OrganizerEventManageModal } from "../components/OrganizerEventManageModal.jsx";
 import { api } from "../api/client.js";
+import {
+  normalizeSessionUser,
+  userIsAdmin,
+} from "../utils/auth.js";
+import {
+  buildEventUpdatePayload,
+  buildRaceStandings,
+  clearEventLiveStart,
+  eventOrganizerName,
+  eventToInfoDraft,
+  formatEventStatusLabelForEvent,
+  formatRaceDuration,
+  formatSportType,
+  eventStatusBadgeClassName,
+  getEventOrganizerCapabilities,
+  normalizeEventStatus,
+  normalizeMatchScoreStatus,
+  parseRaceTimeInput,
+  participantDisplayName,
+  recordEventLiveStart,
+} from "../utils/eventPresentation.js";
 
-const STATUS_LABELS = {
-  pending: "En attente",
-  in_progress: "En cours",
-  completed: "Terminé",
-};
-
-const STATUS_BADGE_CLASS = {
-  pending: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
-  in_progress: "bg-sky-500/20 text-sky-300 border border-sky-500/30",
-  completed: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
-};
-
-const SCORE_STATUS_OPTIONS = [
-  { value: "scheduled", label: "Prévu" },
-  { value: "in_progress", label: "En cours" },
-  { value: "finished", label: "Terminé" },
-];
-
-function OrganizerEvents() {
+function GestionEvenement() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const openedFromHomeRef = useRef(false);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
@@ -34,31 +42,41 @@ function OrganizerEvents() {
   const [scoreLoadingByEvent, setScoreLoadingByEvent] = useState({});
   const [scoreSavingByEvent, setScoreSavingByEvent] = useState({});
   const [scoreDraftByEvent, setScoreDraftByEvent] = useState({});
+  const [raceResultsByEvent, setRaceResultsByEvent] = useState({});
+  const [raceLoadingByEvent, setRaceLoadingByEvent] = useState({});
+  const [raceDraftByEvent, setRaceDraftByEvent] = useState({});
+  const [raceSavingKey, setRaceSavingKey] = useState(null);
+  const [infoDraftByEvent, setInfoDraftByEvent] = useState({});
+  const [infoSavingByEvent, setInfoSavingByEvent] = useState({});
   const [actionMessage, setActionMessage] = useState("");
+  const [selectedEventId, setSelectedEventId] = useState(null);
 
-  const isAdmin = useMemo(
-    () => currentUser?.roles?.includes("ROLE_ADMIN"),
-    [currentUser],
-  );
+  const isAdmin = useMemo(() => userIsAdmin(currentUser), [currentUser]);
 
   const fetchCurrentUserAndEvents = async () => {
     setLoading(true);
     try {
-      const [meRes, eventsRes] = await Promise.all([
+      const [meRes, homeRes, eventsRes] = await Promise.all([
         api.get("/api/me"),
+        api.get("/api/auth/home").catch(() => null),
         api.get("/api/event"),
       ]);
 
-      const user = meRes.data?.data || null;
+      const user = normalizeSessionUser(meRes, homeRes);
       const allEvents = eventsRes.data?.data || [];
       const initialDrafts = allEvents.reduce((acc, event) => {
-        acc[event.id] = event.status || "pending";
+        acc[event.id] = normalizeEventStatus(event.status || "pending");
+        return acc;
+      }, {});
+      const initialInfoDrafts = allEvents.reduce((acc, event) => {
+        acc[event.id] = eventToInfoDraft(event);
         return acc;
       }, {});
 
       setCurrentUser(user);
       setEvents(allEvents);
       setStatusDraftByEvent(initialDrafts);
+      setInfoDraftByEvent(initialInfoDrafts);
     } catch (error) {
       setActionMessage(
         error.response?.data?.message ||
@@ -83,6 +101,15 @@ function OrganizerEvents() {
     return () => clearTimeout(timeoutId);
   }, [actionMessage]);
 
+  useEffect(() => {
+    if (selectedEventId == null) return;
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") closeEventModal();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedEventId]);
+
   const managedEvents = useMemo(() => {
     if (!currentUser) return [];
     if (isAdmin) return events;
@@ -94,6 +121,43 @@ function OrganizerEvents() {
 
   const canManageEvent = (event) =>
     isAdmin || Number(event.creator?.id) === Number(currentUser?.id);
+
+  const openEventModal = (eventId) => {
+    setSelectedEventId(eventId);
+    setActiveTabByEvent((prev) => ({
+      ...prev,
+      [eventId]: "details",
+    }));
+    const ev = managedEvents.find((e) => e.id === eventId);
+    if (ev) {
+      setInfoDraftByEvent((prev) => ({
+        ...prev,
+        [eventId]: eventToInfoDraft(ev),
+      }));
+    }
+    if (
+      ev &&
+      getEventOrganizerCapabilities(ev).showRaceTab &&
+      !Object.prototype.hasOwnProperty.call(raceResultsByEvent, eventId)
+    ) {
+      loadRaceResults(eventId);
+    }
+  };
+
+  useEffect(() => {
+    if (loading || openedFromHomeRef.current) return;
+    const openId = location.state?.openEventId;
+    if (openId == null) return;
+
+    const id = Number(openId);
+    if (!managedEvents.some((event) => Number(event.id) === id)) return;
+
+    openedFromHomeRef.current = true;
+    openEventModal(id);
+    navigate("/organisateur/evenements", { replace: true, state: null });
+  }, [loading, managedEvents, location.state, navigate]);
+
+  const closeEventModal = () => setSelectedEventId(null);
 
   const loadParticipants = async (eventId) => {
     try {
@@ -130,7 +194,7 @@ function OrganizerEvents() {
             data?.scoreTeamB === null || data?.scoreTeamB === undefined
               ? ""
               : String(data.scoreTeamB),
-          status: data?.status || "scheduled",
+          status: normalizeMatchScoreStatus(data?.status || "scheduled"),
         },
       }));
     } catch (error) {
@@ -153,6 +217,122 @@ function OrganizerEvents() {
       }
     } finally {
       setScoreLoadingByEvent((prev) => ({ ...prev, [eventId]: false }));
+    }
+  };
+
+  const loadRaceResults = async (eventId) => {
+    setRaceLoadingByEvent((prev) => ({ ...prev, [eventId]: true }));
+    try {
+      const res = await api.get(`/api/event/${eventId}/resultat-course`);
+      const raw = res.data?.data;
+      const list = Array.isArray(raw)
+        ? raw
+        : res.data?.success
+          ? res.data.data || []
+          : [];
+      setRaceResultsByEvent((prev) => ({ ...prev, [eventId]: list }));
+      setRaceDraftByEvent((prev) => {
+        const drafts = { ...(prev[eventId] || {}) };
+        list.forEach((row) => {
+          const pid = String(row.participantId);
+          if (!drafts[pid]) {
+            drafts[pid] = {
+              place:
+                row.place != null && row.place !== ""
+                  ? String(row.place)
+                  : "",
+              temps:
+                row.temps != null && row.temps !== ""
+                  ? formatRaceDuration(Number(row.temps))
+                  : "",
+            };
+          }
+        });
+        return { ...prev, [eventId]: drafts };
+      });
+    } catch (error) {
+      setRaceResultsByEvent((prev) => ({ ...prev, [eventId]: [] }));
+      if (import.meta.env.DEV) {
+        console.warn(
+          "Résultats course non chargés:",
+          eventId,
+          error.response?.status || error.message,
+        );
+      }
+    } finally {
+      setRaceLoadingByEvent((prev) => ({ ...prev, [eventId]: false }));
+    }
+  };
+
+  const handleRaceDraftChange = (eventId, participantId, field, value) => {
+    const pid = String(participantId);
+    setRaceDraftByEvent((prev) => ({
+      ...prev,
+      [eventId]: {
+        ...(prev[eventId] || {}),
+        [pid]: {
+          place: "",
+          temps: "",
+          ...(prev[eventId]?.[pid] || {}),
+          [field]: value,
+        },
+      },
+    }));
+  };
+
+  const handleSaveRaceResult = async (event, participantId) => {
+    const eventId = event.id;
+    const pid = String(participantId);
+    const draft = raceDraftByEvent[eventId]?.[pid] || {};
+    const placeRaw = draft.place?.trim();
+    const place = placeRaw === "" ? null : Number(placeRaw);
+    const temps = parseRaceTimeInput(draft.temps);
+
+    if (place != null && (!Number.isInteger(place) || place < 1)) {
+      setActionMessage("Le classement doit être un entier ≥ 1.");
+      return;
+    }
+    if (draft.temps?.trim() && temps == null) {
+      setActionMessage("Temps invalide (ex. 42:05 ou 2525 secondes).");
+      return;
+    }
+    if (place == null && temps == null) {
+      setActionMessage("Indiquez au moins un classement ou un temps.");
+      return;
+    }
+
+    const existing = (raceResultsByEvent[eventId] || []).find(
+      (r) => Number(r.participantId) === Number(participantId),
+    );
+    const payload = {
+      participantId: Number(participantId),
+      place,
+      temps,
+    };
+
+    const saveKey = `${eventId}-${participantId}`;
+    setRaceSavingKey(saveKey);
+    try {
+      if (existing?.id) {
+        await api.put(
+          `/api/event/${eventId}/resultat-course/${existing.id}/update`,
+          payload,
+        );
+      } else {
+        await api.post(
+          `/api/event/${eventId}/resultat-course/create`,
+          payload,
+        );
+      }
+      setActionMessage("Résultat enregistré.");
+      await loadRaceResults(eventId);
+    } catch (error) {
+      setActionMessage(
+        error.response?.data?.message ||
+          "Impossible d'enregistrer le résultat.",
+      );
+    } finally {
+      setRaceSavingKey(null);
     }
   };
 
@@ -199,6 +379,58 @@ function OrganizerEvents() {
     }
   };
 
+  const handleInfoDraftChange = (eventId, field, value) => {
+    setInfoDraftByEvent((prev) => ({
+      ...prev,
+      [eventId]: {
+        ...(prev[eventId] || eventToInfoDraft({})),
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleSaveEventInfo = async (event) => {
+    const eventId = event.id;
+    const draft = infoDraftByEvent[eventId];
+    if (!draft) return;
+
+    const built = buildEventUpdatePayload(draft);
+    if (built.error) {
+      setActionMessage(built.error);
+      return;
+    }
+
+    setInfoSavingByEvent((prev) => ({ ...prev, [eventId]: true }));
+    try {
+      const res = await api.put(`/api/event/${eventId}`, built.payload);
+      const saved = res.data?.data;
+      if (saved) {
+        setEvents((prev) =>
+          prev.map((ev) => (ev.id === eventId ? { ...ev, ...saved } : ev)),
+        );
+        setInfoDraftByEvent((prev) => ({
+          ...prev,
+          [eventId]: eventToInfoDraft(saved),
+        }));
+      } else {
+        setEvents((prev) =>
+          prev.map((ev) =>
+            ev.id === eventId ? { ...ev, ...built.payload } : ev,
+          ),
+        );
+      }
+      setActionMessage("Informations enregistrées.");
+      setSelectedEventId(null);
+    } catch (error) {
+      setActionMessage(
+        error.response?.data?.message ||
+          "Impossible de mettre à jour l'événement.",
+      );
+    } finally {
+      setInfoSavingByEvent((prev) => ({ ...prev, [eventId]: false }));
+    }
+  };
+
   const handleStatusUpdate = async (eventId, status, previousStatus) => {
     setStatusSavingByEvent((prev) => ({
       ...prev,
@@ -208,12 +440,21 @@ function OrganizerEvents() {
     try {
       await api.put(`/api/event/${eventId}`, { status });
 
+      const statusChangedAt = new Date().toISOString();
+      if (status === "in_progress") {
+        recordEventLiveStart(eventId, statusChangedAt);
+      } else {
+        clearEventLiveStart(eventId);
+      }
       setEvents((prev) =>
         prev.map((event) =>
           event.id === eventId
             ? {
                 ...event,
                 status,
+                updatedAt: statusChangedAt,
+                liveStartedAt:
+                  status === "in_progress" ? statusChangedAt : undefined,
               }
             : event,
         ),
@@ -273,6 +514,24 @@ function OrganizerEvents() {
         delete next[eventId];
         return next;
       });
+      setRaceResultsByEvent((prev) => {
+        const next = { ...prev };
+        delete next[eventId];
+        return next;
+      });
+      setRaceDraftByEvent((prev) => {
+        const next = { ...prev };
+        delete next[eventId];
+        return next;
+      });
+      setInfoDraftByEvent((prev) => {
+        const next = { ...prev };
+        delete next[eventId];
+        return next;
+      });
+      if (selectedEventId === eventId) {
+        setSelectedEventId(null);
+      }
       setActionMessage("Événement supprimé.");
     } catch (error) {
       setActionMessage(
@@ -291,14 +550,23 @@ function OrganizerEvents() {
       if (!participantsByEvent[event.id]) {
         loadParticipants(event.id);
       }
-      if (!teamsByEvent[event.id]) {
+      const caps = getEventOrganizerCapabilities(event);
+      if (caps.showTeamsTab && !teamsByEvent[event.id]) {
         loadTeams(event.id);
       }
-      if (!Object.prototype.hasOwnProperty.call(scoreByEvent, event.id)) {
+      if (
+        caps.showScoreTab &&
+        !Object.prototype.hasOwnProperty.call(scoreByEvent, event.id)
+      ) {
         loadScore(event.id);
       }
     });
   }, [managedEvents]);
+
+  const selectedEvent = useMemo(() => {
+    if (selectedEventId == null) return null;
+    return managedEvents.find((e) => e.id === selectedEventId) ?? null;
+  }, [managedEvents, selectedEventId]);
 
   const handleScoreDraftChange = (eventId, field, value) => {
     setScoreDraftByEvent((prev) => ({
@@ -371,7 +639,7 @@ function OrganizerEvents() {
             savedScore?.scoreTeamB === undefined
               ? ""
               : String(savedScore.scoreTeamB),
-          status: savedScore?.status || "scheduled",
+          status: normalizeMatchScoreStatus(savedScore?.status || "scheduled"),
         },
       }));
       setActionMessage("Score enregistré.");
@@ -396,8 +664,10 @@ function OrganizerEvents() {
             Gestion des événements
           </h1>
           <p className="text-zinc-400">
-            Gérez vos événements, mettez leur statut à jour et suivez les
-            participants.
+            {isAdmin
+              ? "Administrateur : tous les événements. "
+              : ""}
+            Cliquez sur un événement pour tout gérer dans une fenêtre.
           </p>
         </div>
 
@@ -412,408 +682,152 @@ function OrganizerEvents() {
             Aucun événement à gérer pour le moment.
           </p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {managedEvents.map((event) => {
-              const participants = participantsByEvent[event.id] || [];
-              const teams = teamsByEvent[event.id] || [];
-              const activeTab = activeTabByEvent[event.id] || "";
               const currentStatus = event.status || "pending";
-              const draftStatus = statusDraftByEvent[event.id] || currentStatus;
-              const defaultTeamA = teams[0] || null;
-              const defaultTeamB = teams[1] || null;
-              const scoreDraft = scoreDraftByEvent[event.id] || {
+              const draftStatus =
+                statusDraftByEvent[event.id] || currentStatus;
+              const organizer = eventOrganizerName(event);
+
+              return (
+                <li key={event.id}>
+                  <button
+                    type="button"
+                    onClick={() => openEventModal(event.id)}
+                    className="flex h-full w-full flex-col rounded-xl border border-zinc-700/80 bg-zinc-800/80 p-4 text-left shadow-lg shadow-black/20 transition hover:border-orange-500/40 hover:bg-zinc-800"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <h2 className="text-base font-semibold text-white line-clamp-2">
+                        {event.title}
+                      </h2>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] ${eventStatusBadgeClassName(event)}`}
+                      >
+                        {formatEventStatusLabelForEvent({
+                          status: draftStatus,
+                          dueDate: event.dueDate,
+                        })}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-zinc-400">
+                      {formatSportType(event.type)}
+                    </p>
+                    <p className="text-sm text-zinc-500">
+                      {event.dueDate || "Date non définie"}
+                    </p>
+                    {isAdmin && organizer && (
+                      <p className="mt-1 text-xs text-zinc-500 truncate">
+                        {organizer}
+                      </p>
+                    )}
+                    <span className="mt-3 text-xs font-medium text-orange-400">
+                      Gérer l&apos;événement →
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {selectedEvent && (
+          <OrganizerEventManageModal
+            event={selectedEvent}
+            onClose={closeEventModal}
+            activeTab={activeTabByEvent[selectedEvent.id] || "details"}
+            onTabChange={(tab) => {
+              setActiveTabByEvent((prev) => ({
+                ...prev,
+                [selectedEvent.id]: tab,
+              }));
+              if (
+                tab === "race" &&
+                getEventOrganizerCapabilities(selectedEvent).showRaceTab &&
+                !Object.prototype.hasOwnProperty.call(
+                  raceResultsByEvent,
+                  selectedEvent.id,
+                )
+              ) {
+                loadRaceResults(selectedEvent.id);
+              }
+            }}
+            canManage={canManageEvent(selectedEvent)}
+            participants={participantsByEvent[selectedEvent.id] || []}
+            teams={teamsByEvent[selectedEvent.id] || []}
+            raceStandings={buildRaceStandings(
+              participantsByEvent[selectedEvent.id] || [],
+              raceResultsByEvent[selectedEvent.id] || [],
+            )}
+            draftStatus={
+              statusDraftByEvent[selectedEvent.id] ||
+              selectedEvent.status ||
+              "pending"
+            }
+            currentStatus={selectedEvent.status || "pending"}
+            statusSaving={!!statusSavingByEvent[selectedEvent.id]}
+            onStatusChange={(nextStatus, previousStatus) => {
+              setStatusDraftByEvent((prev) => ({
+                ...prev,
+                [selectedEvent.id]: nextStatus,
+              }));
+              handleStatusUpdate(
+                selectedEvent.id,
+                nextStatus,
+                previousStatus,
+              );
+            }}
+            onDelete={() => handleDeleteEvent(selectedEvent.id)}
+            score={scoreByEvent[selectedEvent.id] ?? null}
+            scoreDraft={
+              scoreDraftByEvent[selectedEvent.id] || {
                 teamAId: "",
                 teamBId: "",
                 scoreTeamA: "",
                 scoreTeamB: "",
                 status: "scheduled",
-              };
-              const score = scoreByEvent[event.id] ?? null;
-              const canManage = canManageEvent(event);
-
-              return (
-                <div
-                  key={event.id}
-                  className="rounded-none border border-zinc-700/80 bg-zinc-800/80 p-5 shadow-lg shadow-black/20"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h2 className="text-xl font-semibold text-white">
-                        {event.title}
-                      </h2>
-                      <p className="text-sm text-zinc-400 mt-1">
-                        Date : {event.dueDate || "Non définie"}
-                      </p>
-                      <p className="text-sm text-zinc-400">
-                        Type : {event.type || "-"}
-                      </p>
-                      <p className="text-sm text-zinc-400">
-                        Visibilité : {event.visibility || "-"}
-                      </p>
-                      <span
-                        className={`inline-flex mt-2 rounded-full px-2.5 py-1 text-xs ${STATUS_BADGE_CLASS[draftStatus] || "bg-zinc-700 text-zinc-300"}`}
-                      >
-                        {STATUS_LABELS[draftStatus] ||
-                          draftStatus ||
-                          "En attente"}
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteEvent(event.id)}
-                      className="rounded-lg bg-red-700 hover:bg-red-800 px-2.5 py-1.5 text-xs transition shrink-0"
-                    >
-                      Supprimer événement
-                    </button>
-                  </div>
-
-                  <div className="mt-4 border-t border-zinc-700 pt-4 flex flex-wrap items-center justify-end gap-2">
-                    <select
-                      className="w-36 rounded-lg bg-zinc-700 border border-zinc-600 px-2.5 py-1.5 text-xs focus:border-orange-500 focus:outline-none"
-                      value={draftStatus}
-                      onChange={(e) => {
-                        const nextStatus = e.target.value;
-                        setStatusDraftByEvent((prev) => ({
-                          ...prev,
-                          [event.id]: nextStatus,
-                        }));
-                        handleStatusUpdate(event.id, nextStatus, currentStatus);
-                      }}
-                      disabled={!!statusSavingByEvent[event.id]}
-                    >
-                      <option value="pending">En attente</option>
-                      <option value="in_progress">En cours</option>
-                      <option value="completed">Terminé</option>
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveTabByEvent((prev) => ({
-                          ...prev,
-                          [event.id]: "details",
-                        }))
-                      }
-                      className={`px-3 py-1.5 text-xs rounded-md transition ${
-                        activeTab === "details"
-                          ? "bg-orange-500 text-white"
-                          : "bg-zinc-700 text-zinc-200 hover:bg-zinc-600"
-                      }`}
-                    >
-                      Détails
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveTabByEvent((prev) => ({
-                          ...prev,
-                          [event.id]: "teams",
-                        }))
-                      }
-                      className={`px-3 py-1.5 text-xs rounded-md transition ${
-                        activeTab === "teams"
-                          ? "bg-orange-500 text-white"
-                          : "bg-zinc-700 text-zinc-200 hover:bg-zinc-600"
-                      }`}
-                    >
-                      Équipes et joueurs
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveTabByEvent((prev) => ({
-                          ...prev,
-                          [event.id]: "score",
-                        }))
-                      }
-                      className={`px-3 py-1.5 text-xs rounded-md transition ${
-                        activeTab === "score"
-                          ? "bg-orange-500 text-white"
-                          : "bg-zinc-700 text-zinc-200 hover:bg-zinc-600"
-                      }`}
-                    >
-                      Score
-                    </button>
-                  </div>
-
-                  <div className="mt-4 border-t border-zinc-700 pt-4">
-                    {activeTab === "details" && (
-                      <section className="border border-zinc-700 bg-zinc-900/60 p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-sm font-semibold text-zinc-200">
-                            Participants
-                          </h3>
-                          <span className="text-xs text-zinc-400">
-                            {participants.length}
-                          </span>
-                        </div>
-
-                        {participants.length === 0 ? (
-                          <p className="text-sm text-zinc-400">
-                            Aucun participant.
-                          </p>
-                        ) : (
-                          <ul className="space-y-2 max-h-64 overflow-auto pr-1">
-                            {participants.map((participant) => (
-                              <li
-                                key={participant.id}
-                                className="text-sm text-zinc-300 flex items-center justify-between gap-3"
-                              >
-                                <span>
-                                  {participant.user?.username ||
-                                    participant.user?.email ||
-                                    "Utilisateur"}
-                                </span>
-                                <span className="text-xs rounded bg-zinc-700 px-2 py-1 text-zinc-300">
-                                  {participant.status}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </section>
-                    )}
-
-                    {activeTab === "teams" && (
-                      <section className="border border-zinc-700 bg-zinc-900/60 p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-sm font-semibold text-zinc-200">
-                            Équipes
-                          </h3>
-                          <span className="text-xs text-zinc-400">
-                            {teams.length}
-                          </span>
-                        </div>
-
-                        {!event.hasTeams ? (
-                          <p className="text-sm text-zinc-400">
-                            Cet événement ne gère pas d'équipes.
-                          </p>
-                        ) : teams.length === 0 ? (
-                          <p className="text-sm text-zinc-400">
-                            Aucune équipe pour cet événement.
-                          </p>
-                        ) : (
-                          <div className="space-y-2 max-h-72 overflow-auto pr-1">
-                            {teams.map((team) => {
-                              const members = teamMembersByTeam[team.id] || [];
-                              const teamKey = `${event.id}-${team.id}`;
-                              const isTeamOpen = !!expandedTeams[teamKey];
-
-                              return (
-                                <div
-                                  key={team.id}
-                                  className="border border-zinc-700 bg-zinc-900/80 p-3"
-                                >
-                                  <div className="flex items-center justify-between gap-3">
-                                    <div>
-                                      <p className="text-sm font-medium text-white">
-                                        {team.name}
-                                      </p>
-                                      {team.maxSize && (
-                                        <p className="text-xs text-zinc-400">
-                                          Taille max : {team.maxSize}
-                                        </p>
-                                      )}
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        toggleTeamMembers(event.id, team.id)
-                                      }
-                                      className="rounded-md bg-orange-500 hover:bg-orange-600 px-3 py-1 text-xs transition"
-                                    >
-                                      {isTeamOpen
-                                        ? "Masquer joueurs"
-                                        : "Voir joueurs"}
-                                    </button>
-                                  </div>
-
-                                  {isTeamOpen && (
-                                    <div className="mt-3 border-t border-zinc-700 pt-2">
-                                      {members.length === 0 ? (
-                                        <p className="text-xs text-zinc-400">
-                                          Aucun joueur dans cette équipe.
-                                        </p>
-                                      ) : (
-                                        <ul className="space-y-1">
-                                          {members.map((member) => (
-                                            <li
-                                              key={member.id}
-                                              className="text-xs text-zinc-300 flex items-center justify-between"
-                                            >
-                                              <span>
-                                                {member.user?.username ||
-                                                  member.user?.email ||
-                                                  "Utilisateur"}
-                                              </span>
-                                              <span className="rounded bg-zinc-700 px-2 py-0.5 text-[10px] text-zinc-300">
-                                                {member.role}
-                                              </span>
-                                            </li>
-                                          ))}
-                                        </ul>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </section>
-                    )}
-
-                    {activeTab === "score" && (
-                      <section className="border border-zinc-700 bg-zinc-900/60 p-3 space-y-3">
-                        {scoreLoadingByEvent[event.id] ? (
-                          <p className="text-sm text-zinc-400">
-                            Chargement du score...
-                          </p>
-                        ) : (
-                          <>
-                            {score ? (
-                              <div className="text-sm text-zinc-300">
-                                Score actuel :{" "}
-                                <span className="font-semibold text-white">
-                                  {score.teamA?.name ||
-                                    defaultTeamA?.name ||
-                                    "Aucune équipe"}{" "}
-                                  {score.scoreTeamA ?? 0} -{" "}
-                                  {score.scoreTeamB ?? 0}{" "}
-                                  {score.teamB?.name ||
-                                    defaultTeamB?.name ||
-                                    "Aucune équipe"}
-                                </span>
-                              </div>
-                            ) : (
-                              <p className="text-sm text-zinc-400">
-                                Aucun score enregistré pour cet événement.
-                              </p>
-                            )}
-
-                            {!canManage ? (
-                              <p className="text-xs text-zinc-400">
-                                Seul l'organisateur ou un admin peut modifier ce
-                                score.
-                              </p>
-                            ) : (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <select
-                                  value={scoreDraft.teamAId}
-                                  onChange={(e) =>
-                                    handleScoreDraftChange(
-                                      event.id,
-                                      "teamAId",
-                                      e.target.value,
-                                    )
-                                  }
-                                  className="rounded bg-zinc-700 border border-zinc-600 px-2 py-2 text-sm"
-                                >
-                                  <option value="">Choisir l'équipe A</option>
-                                  {teams.map((team) => (
-                                    <option key={team.id} value={team.id}>
-                                      {team.name}
-                                    </option>
-                                  ))}
-                                </select>
-                                <select
-                                  value={scoreDraft.teamBId}
-                                  onChange={(e) =>
-                                    handleScoreDraftChange(
-                                      event.id,
-                                      "teamBId",
-                                      e.target.value,
-                                    )
-                                  }
-                                  className="rounded bg-zinc-700 border border-zinc-600 px-2 py-2 text-sm"
-                                >
-                                  <option value="">Choisir l'équipe B</option>
-                                  {teams.map((team) => (
-                                    <option key={team.id} value={team.id}>
-                                      {team.name}
-                                    </option>
-                                  ))}
-                                </select>
-
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={scoreDraft.scoreTeamA}
-                                  onChange={(e) =>
-                                    handleScoreDraftChange(
-                                      event.id,
-                                      "scoreTeamA",
-                                      e.target.value,
-                                    )
-                                  }
-                                  className="rounded bg-zinc-700 border border-zinc-600 px-2 py-2 text-sm"
-                                  placeholder="Score équipe A"
-                                />
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={scoreDraft.scoreTeamB}
-                                  onChange={(e) =>
-                                    handleScoreDraftChange(
-                                      event.id,
-                                      "scoreTeamB",
-                                      e.target.value,
-                                    )
-                                  }
-                                  className="rounded bg-zinc-700 border border-zinc-600 px-2 py-2 text-sm"
-                                  placeholder="Score équipe B"
-                                />
-
-                                <select
-                                  value={scoreDraft.status}
-                                  onChange={(e) =>
-                                    handleScoreDraftChange(
-                                      event.id,
-                                      "status",
-                                      e.target.value,
-                                    )
-                                  }
-                                  className="rounded bg-zinc-700 border border-zinc-600 px-2 py-2 text-sm sm:col-span-2"
-                                >
-                                  {SCORE_STATUS_OPTIONS.map((option) => (
-                                    <option
-                                      key={option.value}
-                                      value={option.value}
-                                    >
-                                      {option.label}
-                                    </option>
-                                  ))}
-                                </select>
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleSaveScore(event)}
-                                  disabled={!!scoreSavingByEvent[event.id]}
-                                  className="sm:col-span-2 rounded bg-orange-500 hover:bg-orange-600 disabled:bg-zinc-600 px-3 py-2 text-sm font-medium transition"
-                                >
-                                  {scoreSavingByEvent[event.id]
-                                    ? "Enregistrement..."
-                                    : score
-                                      ? "Mettre à jour le score"
-                                      : "Créer le score"}
-                                </button>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </section>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+              }
+            }
+            scoreLoading={!!scoreLoadingByEvent[selectedEvent.id]}
+            scoreSaving={!!scoreSavingByEvent[selectedEvent.id]}
+            onScoreDraftChange={(field, value) =>
+              handleScoreDraftChange(selectedEvent.id, field, value)
+            }
+            onSaveScore={() => handleSaveScore(selectedEvent)}
+            raceLoading={!!raceLoadingByEvent[selectedEvent.id]}
+            raceDraftByParticipant={
+              raceDraftByEvent[selectedEvent.id] || {}
+            }
+            raceSavingKey={raceSavingKey}
+            onRaceDraftChange={(participantId, field, value) =>
+              handleRaceDraftChange(
+                selectedEvent.id,
+                participantId,
+                field,
+                value,
+              )
+            }
+            onSaveRaceResult={(participantId) =>
+              handleSaveRaceResult(selectedEvent, participantId)
+            }
+            expandedTeams={expandedTeams}
+            teamMembersByTeam={teamMembersByTeam}
+            onToggleTeamMembers={(teamId) =>
+              toggleTeamMembers(selectedEvent.id, teamId)
+            }
+            infoDraft={
+              infoDraftByEvent[selectedEvent.id] ||
+              eventToInfoDraft(selectedEvent)
+            }
+            infoSaving={!!infoSavingByEvent[selectedEvent.id]}
+            onInfoDraftChange={(field, value) =>
+              handleInfoDraftChange(selectedEvent.id, field, value)
+            }
+            onSaveInfo={() => handleSaveEventInfo(selectedEvent)}
+          />
         )}
       </div>
     </div>
   );
 }
 
-export default OrganizerEvents;
+export default GestionEvenement;

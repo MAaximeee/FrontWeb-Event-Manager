@@ -187,7 +187,7 @@ const Profile = () => {
 
         <div className="bg-zinc-800 rounded-xl shadow-2xl overflow-hidden px-6 sm:px-10 py-10">
           {/* Titre principal profil*/}
-          <h1 className="text-3xl font-bold text-[#F04406] text-center mb-8">
+          <h1 className="text-3xl font-bold text-orange-500 text-center mb-8">
             Information de compte
           </h1>
 
@@ -206,7 +206,7 @@ const Profile = () => {
                 </div>
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="mt-6 w-full bg-[#F04406] hover:bg-orange-700 text-white font-semibold py-3 px-4 rounded-full transition-colors duration-200"
+                  className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-full transition-colors duration-200"
                 >
                   Modifier mon profil
                 </button>
@@ -229,7 +229,7 @@ const Profile = () => {
                     value={form.username}
                     onChange={handleInputChange}
                     placeholder={userData.username || 'Entrez un nom d\'utilisateur'}
-                    className="w-full px-4 py-3 bg-white border border-zinc-300 text-zinc-900 placeholder-zinc-400 rounded-lg focus:outline-none focus:border-[#F04406] focus:ring-2 focus:ring-[#F04406]/20 transition"
+                    className="w-full px-4 py-3 bg-white border border-zinc-300 text-zinc-900 placeholder-zinc-400 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition"
                   />
                 </div>
 
@@ -245,7 +245,7 @@ const Profile = () => {
                     value={form.email}
                     onChange={handleInputChange}
                     placeholder={userData.email || 'Entrez un email'}
-                    className="w-full px-4 py-3 bg-white border border-zinc-300 text-zinc-900 placeholder-zinc-400 rounded-lg focus:outline-none focus:border-[#F04406] focus:ring-2 focus:ring-[#F04406]/20 transition"
+                    className="w-full px-4 py-3 bg-white border border-zinc-300 text-zinc-900 placeholder-zinc-400 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition"
                   />
                 </div>
 
@@ -282,7 +282,7 @@ const Profile = () => {
                           value={form.password}
                           onChange={handleInputChange}
                           placeholder="Minimum 6 caractères"
-                          className="w-full px-4 py-3 bg-white border border-zinc-300 text-zinc-900 placeholder-zinc-400 rounded-lg focus:outline-none focus:border-[#F04406] focus:ring-2 focus:ring-[#F04406]/20 transition"
+                          className="w-full px-4 py-3 bg-white border border-zinc-300 text-zinc-900 placeholder-zinc-400 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition"
                         />
                       </div>
 
@@ -297,7 +297,7 @@ const Profile = () => {
                           value={form.confirmPassword}
                           onChange={handleInputChange}
                           placeholder="Répétez le mot de passe"
-                          className="w-full px-4 py-3 bg-white border border-zinc-300 text-zinc-900 placeholder-zinc-400 rounded-lg focus:outline-none focus:border-[#F04406] focus:ring-2 focus:ring-[#F04406]/20 transition"
+                          className="w-full px-4 py-3 bg-white border border-zinc-300 text-zinc-900 placeholder-zinc-400 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition"
                         />
                       </div>
 
@@ -314,7 +314,7 @@ const Profile = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 bg-[#F04406] hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-full transition-colors duration-200"
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-full transition-colors duration-200"
                 >
                   {submitting ? 'Mise à jour...' : 'Nous rejoindre'}
                 </button>

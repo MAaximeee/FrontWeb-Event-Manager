@@ -5,20 +5,23 @@ import {
   formatEventKickoffTime,
   formatSportType,
   getUpcomingScheduleLabel,
+  eventOrganizerName,
   PHASE_LABELS,
   teamAccentColor,
+  teamMatchResultStyles,
 } from "../utils/eventPresentation.js";
+import { HomeEventPanelHeader } from "./HomeEventPanelHeader.jsx";
 import {
   IndividualRacePanel,
   shouldUseIndividualRacePanel,
 } from "./IndividualRacePanel.jsx";
 
-function TeamColumn({ name, team }) {
+function TeamColumn({ name, team, nameClassName = "text-white font-bold" }) {
   const color = teamAccentColor(team, "#f97316");
   const initial = (name || "?").charAt(0).toUpperCase();
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col items-center gap-2 px-1">
+    <div className="flex min-w-0 flex-col items-center gap-0.5 px-1 shrink">
       <div
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-bold text-white shadow-inner ring-2 ring-zinc-600/80"
         style={{ backgroundColor: color }}
@@ -26,33 +29,31 @@ function TeamColumn({ name, team }) {
       >
         {initial}
       </div>
-      <p className="max-w-[7rem] text-center text-sm font-bold leading-snug text-white line-clamp-2">
+      <p
+        className={`flex min-h-[2.25rem] max-w-[6rem] items-center justify-center text-center text-xs leading-tight line-clamp-2 ${nameClassName}`}
+      >
         {name}
       </p>
     </div>
   );
 }
 
-function ScoreDigits({ scoreA, scoreB }) {
-  const aWins = scoreA > scoreB;
-  const bWins = scoreB > scoreA;
+function ScoreDigits({ scoreA, scoreB, phase }) {
+  const styleA = teamMatchResultStyles(scoreA, scoreB, phase);
+  const styleB = teamMatchResultStyles(scoreB, scoreA, phase);
 
   return (
-    <div className="flex items-baseline gap-1.5 text-4xl font-bold tabular-nums tracking-tight">
-      <span className={aWins || scoreA === scoreB ? "text-white" : "text-gray-500"}>
-        {scoreA}
-      </span>
-      <span className="text-xl font-normal text-gray-500 pb-0.5">-</span>
-      <span className={bWins || scoreA === scoreB ? "text-white" : "text-gray-500"}>
-        {scoreB}
-      </span>
+    <div className="flex items-center justify-center gap-1.5 tabular-nums tracking-tight">
+      <span className={`text-2xl leading-none ${styleA.score}`}>{scoreA}</span>
+      <span className="text-lg font-normal text-gray-500 leading-none">-</span>
+      <span className={`text-2xl leading-none ${styleB.score}`}>{scoreB}</span>
     </div>
   );
 }
 
 function CenterUpcomingKickoff({ dueDate }) {
   return (
-    <div className="flex flex-col items-center justify-center min-w-[4.5rem] pt-2">
+    <div className="flex shrink-0 flex-col items-center justify-center self-center min-w-[4.5rem]">
       <span className="text-2xl font-semibold tabular-nums text-white">
         {formatEventKickoffTime(dueDate)}
       </span>
@@ -65,8 +66,8 @@ function CenterUpcomingKickoff({ dueDate }) {
 
 function CenterLiveOrPast({ phase, scoreA, scoreB, elapsed }) {
   return (
-    <div className="flex flex-col items-center justify-center min-w-[5.5rem] pt-3">
-      <ScoreDigits scoreA={scoreA} scoreB={scoreB} />
+    <div className="flex shrink-0 flex-col items-center justify-center self-center min-w-[4.5rem]">
+      <ScoreDigits scoreA={scoreA} scoreB={scoreB} phase={phase} />
       {phase === "live" ? (
         <div className="mt-1 flex flex-col items-center gap-0.5">
           <span className="text-xs font-bold uppercase tracking-wide text-orange-500">
@@ -93,6 +94,7 @@ export function HomeEventPanel({
   participantCount = null,
   participants = [],
   raceResults = [],
+  detailAction = null,
 }) {
   const showScore = eventHasTeamScore(event);
 
@@ -104,6 +106,7 @@ export function HomeEventPanel({
         participants={participants}
         raceResults={raceResults}
         elapsed={elapsed}
+        detailAction={detailAction}
       />
     );
   }
@@ -114,48 +117,47 @@ export function HomeEventPanel({
   const scoreA = scoreMatch?.scoreTeamA ?? 0;
   const scoreB = scoreMatch?.scoreTeamB ?? 0;
   const dueDate = event?.dueDate;
+  const organizer = eventOrganizerName(event);
   const headerPill =
     phase === "upcoming"
       ? formatEventHeaderPill(dueDate, { dateOnly: true })
       : formatEventHeaderPill(dueDate);
+  const sport = formatSportType(event?.type);
+  const title = event?.title || "";
+  const nameStyleA = teamMatchResultStyles(scoreA, scoreB, phase).name;
+  const nameStyleB = teamMatchResultStyles(scoreB, scoreA, phase).name;
 
   return (
-    <div className="w-full max-w-lg mx-auto px-1 py-2">
-      <p className="text-center text-xs text-gray-400 tabular-nums mb-4">
-        {headerPill}
-      </p>
-
-      {event?.title && (
-        <p className="text-center text-[11px] text-gray-500 mb-4 line-clamp-1">
-          {event.title}
-          <span className="text-gray-600"> · </span>
-          {formatSportType(event?.type)}
-        </p>
-      )}
+    <div className="w-full min-w-0 max-w-lg min-[1800px]:max-w-xl mx-auto px-1 py-1 overflow-hidden">
+      <HomeEventPanelHeader
+        title={title}
+        headerPill={headerPill}
+        sport={sport}
+        organizer={organizer}
+        detailAction={detailAction}
+      />
 
       {showScore ? (
-        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 sm:gap-4">
-          <TeamColumn name={nameA} team={teamA} />
+        <section className="pt-1 w-full min-w-0 overflow-hidden">
+          <div className="flex w-full min-w-0 max-w-md mx-auto items-start justify-between gap-x-4 sm:gap-x-6 min-[1800px]:gap-x-6">
+            <TeamColumn name={nameA} team={teamA} nameClassName={nameStyleA} />
 
-          {phase === "upcoming" ? (
-            <CenterUpcomingKickoff dueDate={dueDate} />
-          ) : (
-            <CenterLiveOrPast
-              phase={phase}
-              scoreA={scoreA}
-              scoreB={scoreB}
-              elapsed={elapsed}
-            />
-          )}
+            {phase === "upcoming" ? (
+              <CenterUpcomingKickoff dueDate={dueDate} />
+            ) : (
+              <CenterLiveOrPast
+                phase={phase}
+                scoreA={scoreA}
+                scoreB={scoreB}
+                elapsed={elapsed}
+              />
+            )}
 
-          <TeamColumn name={nameB} team={teamB} />
-        </div>
+            <TeamColumn name={nameB} team={teamB} nameClassName={nameStyleB} />
+          </div>
+        </section>
       ) : (
-        <div className="text-center py-2">
-          <p className="text-lg font-bold text-white mb-3">{event?.title}</p>
-          <p className="text-sm text-orange-400 mb-4">
-            {formatSportType(event?.type)}
-          </p>
+        <section className="text-center py-2">
           {phase === "upcoming" ? (
             <CenterUpcomingKickoff dueDate={dueDate} />
           ) : phase === "live" ? (
@@ -177,7 +179,7 @@ export function HomeEventPanel({
               {participantCount > 1 ? "s" : ""}
             </p>
           )}
-        </div>
+        </section>
       )}
     </div>
   );

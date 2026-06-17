@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
+import { mergeUserRoles, userIsAdmin } from "../utils/auth.js";
 import {
   eventHasTeamScore,
   getEventLiveElapsedSeconds,
@@ -46,7 +47,9 @@ const ScoreBoardDetails = ({ event }) => {
 
         const fullEvent = eventRes.data?.data || event;
         setEventDetails(fullEvent);
-        setCurrentUser(meRes?.data?.user || meRes?.data?.data || null);
+        setCurrentUser(
+          mergeUserRoles(meRes?.data?.user || meRes?.data?.data || null),
+        );
 
         const withScore = eventHasTeamScore(fullEvent);
 
@@ -113,7 +116,8 @@ const ScoreBoardDetails = ({ event }) => {
     if (!ev) return;
 
     if (isEventInProgress(ev)) {
-      const tick = () => setElapsed(getEventLiveElapsedSeconds(ev));
+      const tick = () =>
+        setElapsed(getEventLiveElapsedSeconds(ev, scoreMatch));
       tick();
       const interval = setInterval(tick, 1000);
       return () => clearInterval(interval);
@@ -138,7 +142,7 @@ const ScoreBoardDetails = ({ event }) => {
     }
 
     setTimeToStart(null);
-  }, [eventDetails]);
+  }, [eventDetails, scoreMatch]);
 
   if (loading) {
     return (
@@ -162,9 +166,41 @@ const ScoreBoardDetails = ({ event }) => {
     );
 
   const canGoToParticipation = isRegistered && phase === "upcoming";
+  const canManageAsOrganizer =
+    currentUser &&
+    (userIsAdmin(currentUser) ||
+      Number(ev.creator?.id) === Number(currentUser.id));
+
+  const detailButtonLabel = canManageAsOrganizer
+    ? userIsAdmin(currentUser)
+      ? "Gérer l'événement"
+      : "Gérer mon événement"
+    : canGoToParticipation
+      ? "Accéder à mon événement"
+      : "Voir le détail";
+
+  const detailButton = (
+    <button
+      type="button"
+      onClick={() => {
+        if (canManageAsOrganizer) {
+          navigate("/organisateur/evenements", {
+            state: { openEventId: ev.id },
+          });
+          return;
+        }
+        navigate(`/calendrier/evenement/${ev.id}`, {
+          state: { from: "home" },
+        });
+      }}
+      className="shrink-0 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-xs sm:text-sm font-semibold transition whitespace-nowrap"
+    >
+      {detailButtonLabel}
+    </button>
+  );
 
   return (
-    <div className="flex flex-col gap-4 text-white max-w-lg mx-auto w-full">
+    <div className="flex flex-col text-white w-full min-w-0 max-w-lg min-[1800px]:max-w-xl mx-auto overflow-hidden">
       <HomeEventPanel
         event={ev}
         phase={phase}
@@ -175,10 +211,11 @@ const ScoreBoardDetails = ({ event }) => {
         participantCount={participants.length}
         participants={participants}
         raceResults={raceResults}
+        detailAction={detailButton}
       />
 
-      <div className="flex flex-wrap gap-2 justify-center pt-1">
-        {showTeamScore && (
+      {showTeamScore && (
+        <div className="flex justify-center border-t border-zinc-700/80 mt-4 pt-4">
           <button
             type="button"
             onClick={() => setShowDetails((v) => !v)}
@@ -186,17 +223,8 @@ const ScoreBoardDetails = ({ event }) => {
           >
             {showDetails ? "Masquer la composition" : "Composition"}
           </button>
-        )}
-        {canGoToParticipation && (
-          <button
-            type="button"
-            onClick={() => navigate(`/calendrier/evenement/${ev.id}`)}
-            className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-sm font-semibold transition"
-          >
-            Accéder à mon événement
-          </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {showDetails && showTeamScore && ev.hasTeams && (
         <div className="w-full border-t border-zinc-700 pt-4 text-sm flex flex-col items-center">

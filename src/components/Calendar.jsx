@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   eventDayStart,
+  eventOrganizerName,
   getEventPhase,
   PHASE_BADGE_CLASS,
   startOfCalendarDay,
@@ -101,7 +102,7 @@ function Calendar({
   const selectedEvents = getEventsForDate(listDay);
 
   return (
-    <div className="h-full w-full flex flex-col flex-1 min-h-0">
+    <div className="h-full w-full min-w-0 flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="flex items-center justify-between p-2 border-b border-zinc-700 text-white">
         <div className="flex items-center gap-2">
           <button
@@ -141,7 +142,7 @@ function Calendar({
         ))}
       </div>
 
-      <div className="grid grid-cols-7">
+      <div className="grid grid-cols-7 min-w-0">
         {calendarDays.map((day, index) => {
           const dayEvents = getEventsForDate(day.date);
           const isSelected = isSameCalendarDay(day.date, listDay);
@@ -167,8 +168,8 @@ function Calendar({
         })}
       </div>
 
-      <div className="border-t border-zinc-700 p-2 text-white min-h-[80px] flex-1">
-        <p className="text-[10px] text-gray-400 tracking-widest mb-2 capitalize">
+      <div className="border-t border-zinc-700 p-2 text-white flex-1 min-h-0 flex flex-col overflow-hidden">
+        <p className="shrink-0 text-[10px] text-gray-400 tracking-widest mb-2 capitalize">
           {listDay.toLocaleDateString("fr-FR", {
             weekday: "long",
             day: "numeric",
@@ -181,21 +182,33 @@ function Calendar({
             Aucun événement
           </p>
         ) : (
-          <div className="flex flex-col gap-1 overflow-y-auto max-h-[80px]">
-            {selectedEvents.map((ev) => (
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5 -mr-0.5">
+            <div className="flex flex-col gap-1.5">
+            {selectedEvents.map((ev) => {
+              const organizer = eventOrganizerName(ev);
+              return (
               <button
                 type="button"
                 key={ev.id}
                 onClick={() => onSelectEvent?.(ev)}
-                className={`w-full flex items-center justify-between px-2 py-1.5 rounded text-[11px] text-left transition ${
+                className={`w-full flex items-start justify-between gap-2 px-2 py-2 rounded text-[11px] text-left transition ${
                   selectedEventId === ev.id
                     ? "bg-zinc-500/25 hover:bg-zinc-500/25"
                     : "hover:bg-white/5"
                 }`}
               >
-                <span className="truncate font-medium">{ev.title}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium leading-snug line-clamp-2">
+                    {ev.title}
+                  </span>
+                  {organizer && (
+                    <span className="block truncate text-[10px] text-gray-500 mt-0.5 leading-tight">
+                      Par {organizer}
+                    </span>
+                  )}
+                </span>
                 <span
-                  className={`shrink-0 ml-2 text-[9px] px-1 rounded ${PHASE_BADGE_CLASS[getEventPhase(ev)]}`}
+                  className={`shrink-0 mt-0.5 text-[9px] px-1 rounded ${PHASE_BADGE_CLASS[getEventPhase(ev)]}`}
                 >
                   {getEventPhase(ev) === "live"
                     ? "Live"
@@ -204,7 +217,9 @@ function Calendar({
                       : "Passé"}
                 </span>
               </button>
-            ))}
+            );
+            })}
+            </div>
           </div>
         )}
       </div>

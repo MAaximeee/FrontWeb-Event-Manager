@@ -10,6 +10,7 @@ const Register = () => {
     password: "",
     confirmPassword: "",
   });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
@@ -54,6 +55,13 @@ const Register = () => {
       return;
     }
 
+    if (!acceptedTerms) {
+      setError(
+        "Vous devez accepter les conditions d'utilisation et la politique de confidentialité.",
+      );
+      return;
+    }
+
     try {
       const response = await api.post("/api/register", {
         username: values.username,
@@ -77,7 +85,7 @@ const Register = () => {
           <img src={logo} alt="Logo" className="h-20 w-auto" />
         </div>
 
-        <h2 className="text-2xl text-white font-bold text-center mb-6">
+        <h2 className="text-2xl text-orange-500 font-bold text-center mb-6">
           Inscription
         </h2>
 
@@ -131,11 +139,49 @@ const Register = () => {
             minuscule, une majuscule, un chiffre et un caractere special.
           </p>
 
+          <label
+            className="flex items-start gap-2 text-xs text-zinc-300 cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => {
+                setAcceptedTerms(e.target.checked);
+                setError("");
+              }}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-500 bg-zinc-700 text-orange-500 focus:ring-orange-500/40"
+            />
+            <span>
+              En créant un compte, j&apos;accepte les{" "}
+              <Link
+                to="/legal/conditions-utilisation"
+                className="text-orange-500 hover:text-orange-400 underline"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                conditions d&apos;utilisation
+              </Link>
+              {" et la "}
+              <Link
+                to="/legal/politique-confidentialite"
+                className="text-orange-500 hover:text-orange-400 underline"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                politique de confidentialité
+              </Link>
+              .
+            </span>
+          </label>
+
           {error && <p className="text-sm text-red-400">{error}</p>}
 
           <button
             type="submit"
-            className="cursor-pointer w-full bg-orange-600 hover:bg-orange-700 text-black font-semibold py-2 rounded transition-colors"
+            disabled={!acceptedTerms}
+            className="cursor-pointer w-full bg-orange-500 hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 text-white font-semibold py-2 rounded transition-colors"
           >
             Nous rejoindre
           </button>

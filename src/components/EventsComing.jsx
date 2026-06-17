@@ -7,12 +7,70 @@ import {
   formatMatchListStatus,
   formatSportType,
   getEventPhase,
-  PHASE_BADGE_CLASS,
-  PHASE_LABELS,
+  normalizeSportTypeKey,
+  parseEventDate,
+  SPORT_FILTER_TYPE_KEYS,
   shiftCalendarDay,
   startOfCalendarDay,
   teamAccentColor,
+  teamMatchResultStyles,
 } from "../utils/eventPresentation.js";
+
+function ListModeTabs({ mode, onModeChange }) {
+  const tabClass = (active) =>
+    `flex-1 rounded-md px-2 py-1.5 text-[11px] font-semibold transition ${
+      active
+        ? "bg-orange-500 text-white"
+        : "text-gray-400 hover:text-zinc-200"
+    }`;
+
+  return (
+    <div
+      className="flex min-w-0 flex-1 gap-0.5 rounded-lg border border-zinc-600/80 bg-zinc-900/60 p-0.5"
+      role="tablist"
+      aria-label="Affichage des événements"
+    >
+      <button
+        type="button"
+        role="tab"
+        aria-selected={mode === "day"}
+        className={tabClass(mode === "day")}
+        onClick={() => onModeChange("day")}
+      >
+        Journée
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={mode === "upcoming"}
+        className={tabClass(mode === "upcoming")}
+        onClick={() => onModeChange("upcoming")}
+      >
+        À venir
+      </button>
+    </div>
+  );
+}
+
+function SportFilter({ value, options, onChange }) {
+  if (options.length === 0) return null;
+
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      aria-label="Filtrer par sport"
+      className="w-[7.25rem] shrink-0 rounded-lg border border-zinc-600/80 bg-zinc-900/80 px-2 py-1.5 text-[11px] text-white focus:border-orange-500/60 focus:outline-none"
+    >
+      <option value="all">Tous</option>
+      {options.map((type) => (
+        <option key={type} value={type}>
+          {formatSportType(type)}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 function NavChevron({ direction }) {
   return (
@@ -39,28 +97,26 @@ function CalendarDayNav({ day, onDayChange }) {
   const label = formatCalendarNavLabel(day);
 
   return (
-    <div className="shrink-0 w-full">
-      <div className="flex items-center justify-between w-full rounded-full border border-zinc-600 bg-zinc-900/50 px-1.5 py-1">
-        <button
-          type="button"
-          onClick={() => onDayChange(shiftCalendarDay(day, -1))}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-orange-500 shadow-md ring-1 ring-zinc-700/80 hover:bg-zinc-700 transition-colors"
-          aria-label="Jour précédent"
-        >
-          <NavChevron direction="left" />
-        </button>
-        <span className="flex-1 min-w-0 text-center text-sm font-bold text-orange-500 px-2 truncate">
-          {label}
-        </span>
-        <button
-          type="button"
-          onClick={() => onDayChange(shiftCalendarDay(day, 1))}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-orange-500 shadow-md ring-1 ring-zinc-700/80 hover:bg-zinc-700 transition-colors"
-          aria-label="Jour suivant"
-        >
-          <NavChevron direction="right" />
-        </button>
-      </div>
+    <div className="flex items-center justify-between gap-1 w-full">
+      <button
+        type="button"
+        onClick={() => onDayChange(shiftCalendarDay(day, -1))}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-orange-500 hover:bg-zinc-700/80 transition-colors"
+        aria-label="Jour précédent"
+      >
+        <NavChevron direction="left" />
+      </button>
+      <span className="flex-1 min-w-0 text-center text-xs font-semibold text-zinc-300 px-1 truncate">
+        {label}
+      </span>
+      <button
+        type="button"
+        onClick={() => onDayChange(shiftCalendarDay(day, 1))}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-orange-500 hover:bg-zinc-700/80 transition-colors"
+        aria-label="Jour suivant"
+      >
+        <NavChevron direction="right" />
+      </button>
     </div>
   );
 }
@@ -72,29 +128,31 @@ function MatchListRow({ event, teams, score, isSelected, onSelect }) {
   const teamB = score?.teamB ?? teams?.[1];
   const nameA = teamA?.name ?? event.title;
   const nameB = teamB?.name ?? "—";
-  const scoreA =
-    score?.scoreTeamA !== undefined && score?.scoreTeamA !== null
-      ? score.scoreTeamA
-      : null;
-  const scoreB =
-    score?.scoreTeamB !== undefined && score?.scoreTeamB !== null
-      ? score.scoreTeamB
-      : null;
+  const showResultScores = phase === "live" || phase === "past";
+  const scoreA = showResultScores
+    ? (score?.scoreTeamA ?? event?.scoreTeamA ?? 0)
+    : null;
+  const scoreB = showResultScores
+    ? (score?.scoreTeamB ?? event?.scoreTeamB ?? 0)
+    : null;
+  const styleA = teamMatchResultStyles(scoreA, scoreB, phase);
+  const styleB = teamMatchResultStyles(scoreB, scoreA, phase);
   const status = formatMatchListStatus(event, phase);
-  const participantsCount = event.participants?.length ?? 0;
+  const sport = formatSportType(event.type);
+  const showTeams = showScore && teams?.length > 0;
 
   return (
     <li className="w-full">
       <button
         type="button"
         onClick={onSelect}
-        className={`flex w-full min-w-full text-left border-b border-zinc-700 transition-colors ${
+        className={`flex w-full max-w-full min-w-0 text-left border-b border-zinc-700 transition-colors ${
           isSelected
             ? "bg-zinc-500/25 hover:bg-zinc-500/25"
             : "hover:bg-white/5"
         }`}
       >
-        <div className="flex w-[6.75rem] min-w-[6.75rem] shrink-0 flex-col items-center justify-center border-r border-zinc-700 py-2.5 pl-3 sm:pl-4 pr-2.5 sm:pr-3">
+        <div className="flex w-[6rem] min-w-[6rem] shrink-0 flex-col items-center justify-center self-stretch border-r border-zinc-700 py-2 pl-2 sm:pl-3 pr-2 sm:pr-2.5">
           {status.live ? (
             <>
               <span className="text-[10px] font-bold text-orange-500">
@@ -124,62 +182,55 @@ function MatchListRow({ event, teams, score, isSelected, onSelect }) {
           )}
         </div>
 
-        <div className="min-w-0 flex-1 py-2.5 pl-3 pr-3 sm:pr-4">
-          {showScore && teams?.length > 0 ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span
-                  className="h-5 w-5 shrink-0 rounded-full text-[9px] font-bold flex items-center justify-center text-white"
-                  style={{ backgroundColor: teamAccentColor(teamA) }}
-                >
-                  {nameA.charAt(0)}
-                </span>
-                <span className="flex-1 truncate text-sm text-white">
-                  {nameA}
-                </span>
-                {scoreA !== null && (
-                  <span className="text-sm font-bold tabular-nums text-orange-400 w-5 text-right">
+        <div className="min-w-0 flex-1 py-2 pl-3 pr-2 sm:pr-3">
+          <p className="text-[11px] font-semibold text-zinc-200 leading-none">
+            {sport}
+          </p>
+          {showTeams ? (
+            <div className="flex mt-1.5 gap-2">
+              <div className="min-w-0 flex-1 space-y-1">
+                <div className="flex items-center gap-1.5 min-h-[1.125rem]">
+                  <span
+                    className="h-4 w-4 shrink-0 rounded-full text-[8px] font-bold flex items-center justify-center text-white"
+                    style={{ backgroundColor: teamAccentColor(teamA) }}
+                  >
+                    {nameA.charAt(0)}
+                  </span>
+                  <span
+                    className={`flex-1 truncate text-xs ${styleA.name}`}
+                  >
+                    {nameA}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 min-h-[1.125rem]">
+                  <span
+                    className="h-4 w-4 shrink-0 rounded-full text-[8px] font-bold flex items-center justify-center text-white"
+                    style={{ backgroundColor: teamAccentColor(teamB, "#52525b") }}
+                  >
+                    {nameB.charAt(0)}
+                  </span>
+                  <span
+                    className={`flex-1 truncate text-xs ${styleB.name}`}
+                  >
+                    {nameB}
+                  </span>
+                </div>
+              </div>
+              {showResultScores && (
+                <div className="flex shrink-0 flex-col justify-between py-0.5 w-7 text-right tabular-nums">
+                  <span className={`text-xs leading-none ${styleA.score}`}>
                     {scoreA}
                   </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className="h-5 w-5 shrink-0 rounded-full text-[9px] font-bold flex items-center justify-center text-white"
-                  style={{ backgroundColor: teamAccentColor(teamB, "#52525b") }}
-                >
-                  {nameB.charAt(0)}
-                </span>
-                <span className="flex-1 truncate text-sm text-white">
-                  {nameB}
-                </span>
-                {scoreB !== null && (
-                  <span className="text-sm font-bold tabular-nums text-orange-400 w-5 text-right">
+                  <span className={`text-xs leading-none ${styleB.score}`}>
                     {scoreB}
                   </span>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           ) : (
-            <div>
-              <p className="text-sm font-medium text-white truncate">
-                {event.title}
-              </p>
-              <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-2 flex-wrap">
-                <span>{formatSportType(event.type)}</span>
-                <span
-                  className={`rounded-full px-1.5 py-0.5 text-[9px] ${PHASE_BADGE_CLASS[phase]}`}
-                >
-                  {PHASE_LABELS[phase]}
-                </span>
-                {participantsCount > 0 && (
-                  <span>
-                    · {participantsCount} inscrit
-                    {participantsCount > 1 ? "s" : ""}
-                  </span>
-                )}
-              </p>
-            </div>
+            <p className="text-xs font-medium text-white truncate mt-1">
+              {event.title}
+            </p>
           )}
         </div>
       </button>
@@ -203,6 +254,8 @@ const EventsComing = ({
   const loadedTeamIds = useRef(new Set());
   const loadedScoreIds = useRef(new Set());
   const [selectedEventId, setSelectedEventId] = useState(null);
+  const [listMode, setListMode] = useState("day");
+  const [sportFilter, setSportFilter] = useState("all");
 
   useEffect(() => {
     if (selectedFromParent != null) {
@@ -210,9 +263,31 @@ const EventsComing = ({
     }
   }, [selectedFromParent]);
 
-  const filteredEvents = useMemo(() => {
+  const dayEvents = useMemo(() => {
     return filterEventsByCalendarDay(events, selectedDay);
   }, [events, selectedDay]);
+
+  const upcomingEvents = useMemo(() => {
+    return [...(events || [])]
+      .filter((ev) => getEventPhase(ev) === "upcoming")
+      .sort(
+        (a, b) =>
+          (parseEventDate(a.dueDate)?.getTime() ?? Infinity) -
+          (parseEventDate(b.dueDate)?.getTime() ?? Infinity),
+      );
+  }, [events]);
+
+  const sportOptions = SPORT_FILTER_TYPE_KEYS;
+
+  const sourceEvents = listMode === "upcoming" ? upcomingEvents : dayEvents;
+
+  const filteredEvents = useMemo(() => {
+    if (sportFilter === "all") return sourceEvents;
+    const filterKey = normalizeSportTypeKey(sportFilter);
+    return sourceEvents.filter(
+      (ev) => normalizeSportTypeKey(ev.type) === filterKey,
+    );
+  }, [sourceEvents, sportFilter]);
 
   const hasLiveOnDay = useMemo(
     () => filteredEvents.some((ev) => getEventPhase(ev) === "live"),
@@ -257,13 +332,17 @@ const EventsComing = ({
     });
   }, [filteredEvents]);
 
-  const eventsBySport = useMemo(() => {
-    return filteredEvents.reduce((acc, ev) => {
-      const type = formatSportType(ev.type);
-      if (!acc[type]) acc[type] = [];
-      acc[type].push(ev);
-      return acc;
-    }, {});
+  const sortedEvents = useMemo(() => {
+    return [...filteredEvents].sort((a, b) => {
+      const phaseRank = { live: 0, upcoming: 1, past: 2, unknown: 3 };
+      const rankA = phaseRank[getEventPhase(a)] ?? 3;
+      const rankB = phaseRank[getEventPhase(b)] ?? 3;
+      if (rankA !== rankB) return rankA - rankB;
+      return (
+        (parseEventDate(a.dueDate)?.getTime() ?? Infinity) -
+        (parseEventDate(b.dueDate)?.getTime() ?? Infinity)
+      );
+    });
   }, [filteredEvents]);
 
   if (loading) {
@@ -275,37 +354,46 @@ const EventsComing = ({
   }
 
   return (
-    <div className="flex flex-col gap-3 flex-1 min-h-0">
-      <CalendarDayNav day={selectedDay} onDayChange={setSelectedDay} />
+    <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden">
+      <div className="shrink-0 space-y-2 border-b border-zinc-700 pb-2 mb-0">
+        <div className="flex items-center gap-2">
+          <ListModeTabs mode={listMode} onModeChange={setListMode} />
+          <SportFilter
+            value={sportFilter}
+            options={sportOptions}
+            onChange={setSportFilter}
+          />
+        </div>
+        {listMode === "day" && (
+          <CalendarDayNav day={selectedDay} onDayChange={setSelectedDay} />
+        )}
+      </div>
 
-      <div className="flex-1 overflow-y-auto min-h-[12rem] max-h-[28rem] lg:max-h-none border-t border-zinc-700 -mx-3 sm:-mx-4">
-        {filteredEvents.length === 0 ? (
+      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-[12rem] max-h-[28rem] lg:max-h-none min-[1800px]:max-h-[calc(100vh-14rem)] mt-2">
+        {sortedEvents.length === 0 ? (
           <p className="text-center text-sm text-gray-500 py-10 px-4">
-            Aucun événement pour cette journée.
+            {sportFilter !== "all"
+              ? "Aucun événement."
+              : listMode === "upcoming"
+                ? "Aucun événement à venir."
+                : "Aucun événement pour cette journée."}
           </p>
         ) : (
-          Object.entries(eventsBySport).map(([sport, sportEvents]) => (
-            <div key={sport}>
-              <div className="sticky top-0 z-10 bg-zinc-800 px-3 sm:px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-orange-400 border-b border-zinc-700">
-                {sport}
-              </div>
-              <ul className="m-0 list-none p-0">
-                {sportEvents.map((ev) => (
-                  <MatchListRow
-                    key={ev.id}
-                    event={ev}
-                    teams={teamsByEvent[ev.id]}
-                    score={scoresByEvent[ev.id]}
-                    isSelected={ev.id === selectedEventId}
-                    onSelect={() => {
-                      setSelectedEventId(ev.id);
-                      onSelectEvent?.(ev);
-                    }}
-                  />
-                ))}
-              </ul>
-            </div>
-          ))
+          <ul className="m-0 list-none p-0">
+            {sortedEvents.map((ev) => (
+              <MatchListRow
+                key={ev.id}
+                event={ev}
+                teams={teamsByEvent[ev.id]}
+                score={scoresByEvent[ev.id]}
+                isSelected={ev.id === selectedEventId}
+                onSelect={() => {
+                  setSelectedEventId(ev.id);
+                  onSelectEvent?.(ev);
+                }}
+              />
+            ))}
+          </ul>
         )}
       </div>
     </div>
