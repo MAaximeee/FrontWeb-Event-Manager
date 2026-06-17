@@ -20,6 +20,122 @@ export function parseEventDate(dueDate) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+/** Horodatage API (ISO) — pas la date planifiée seule. */
+export function parseEventInstant(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export function eventDueDateHasExplicitTime(dueDate) {
+  return typeof dueDate === "string" && dueDate.includes("T");
+}
+
+export const ORGANIZER_EVENT_SPORT_TYPES = [
+  { value: "football", label: "Football" },
+  { value: "basketball", label: "Basketball" },
+  { value: "tennis", label: "Tennis" },
+  { value: "rugby", label: "Rugby" },
+  { value: "handball", label: "Handball" },
+  { value: "course_a_pied", label: "Course à pied" },
+  { value: "autres", label: "Autres" },
+];
+
+const ORGANIZER_PREDEFINED_SPORT_VALUES = new Set(
+  ORGANIZER_EVENT_SPORT_TYPES.filter((o) => o.value !== "autres").map(
+    (o) => o.value,
+  ),
+);
+
+export function eventToInfoDraft(event) {
+  const rawType = String(event?.type || "football").trim();
+  const isPredefined = ORGANIZER_PREDEFINED_SPORT_VALUES.has(rawType);
+  return {
+    title: event?.title || "",
+    description: event?.description || "",
+    visibility: event?.visibility || "public",
+    type: isPredefined ? rawType : "autres",
+    customType: isPredefined ? "" : rawType,
+  };
+}
+
+/** Champs acceptés par PUT /api/event/{id} (sans dueDate). */
+export function buildEventUpdatePayload(draft) {
+  const title = draft.title?.trim() || "";
+  if (!title) {
+    return { error: "Le titre est obligatoire." };
+  }
+  const eventType =
+    draft.type === "autres"
+      ? draft.customType?.trim() || ""
+      : draft.type;
+  if (!eventType) {
+    return { error: "Précisez le type de sport." };
+  }
+  return {
+    payload: {
+      title,
+      description: draft.description?.trim() || null,
+      type: eventType,
+      visibility: draft.visibility || "public",
+    },
+  };
+}
+
+function liveStartStorageKey(eventId) {
+  return `offi-event-live-start:${eventId}`;
+}
+
+/** Horodatage local du passage « en cours » (l’API n’expose pas startedAt). */
+export function recordEventLiveStart(eventId, instant = new Date()) {
+  if (eventId == null || typeof sessionStorage === "undefined") return;
+  const iso =
+    instant instanceof Date ? instant.toISOString() : String(instant);
+  sessionStorage.setItem(liveStartStorageKey(eventId), iso);
+}
+
+export function clearEventLiveStart(eventId) {
+  if (eventId == null || typeof sessionStorage === "undefined") return;
+  sessionStorage.removeItem(liveStartStorageKey(eventId));
+}
+
+function readStoredLiveStart(eventId) {
+  if (eventId == null || typeof sessionStorage === "undefined") return null;
+  return parseEventInstant(sessionStorage.getItem(liveStartStorageKey(eventId)));
+}
+
+/**
+ * Début effectif du live : champs API dédiés, sinon horodatage enregistré au passage « en cours ».
+ * On n’utilise pas updatedAt (toute modif) ni dueDate à 12h par défaut.
+ */
+export function getEventLiveStartInstant(event, scoreMatch = null) {
+  if (!event) return null;
+
+  const explicit = [
+    event.startedAt,
+    event.matchStartedAt,
+    event.startTime,
+    event.liveStartedAt,
+    scoreMatch?.startedAt,
+    scoreMatch?.matchStartedAt,
+    scoreMatch?.startTime,
+  ];
+  for (const raw of explicit) {
+    const d = parseEventInstant(raw);
+    if (d) return d;
+  }
+
+  const status = normalizeEventStatus(event.status);
+  if (status !== "in_progress") return null;
+
+  let stored = readStoredLiveStart(event.id);
+  if (!stored) {
+    recordEventLiveStart(event.id, new Date());
+    stored = readStoredLiveStart(event.id);
+  }
+  return stored;
+}
+
 export function formatEventDateTime(dueDate) {
   const d = parseEventDate(dueDate);
   if (!d) return "Date inconnue";
@@ -66,6 +182,94 @@ export function isEventDayAfterToday(dueDate) {
   return eventDay.getTime() > today.getTime();
 }
 
+/** API peut renvoyer `ongoing` au lieu de `in_progress`. */
+export function normalizeEventStatus(status) {
+  const s = String(status ?? "").trim().toLowerCase();
+  if (!s) return "pending";
+  if (s === "ongoing") return "in_progress";
+  return s;
+}
+
+const EVENT_STATUS_LABELS_FR = {
+  pending: "En attente",
+  in_progress: "En cours",
+  completed: "Terminé",
+  cancelled: "Annulé",
+};
+
+export function formatEventStatusLabel(status) {
+  const key = normalizeEventStatus(status);
+  return EVENT_STATUS_LABELS_FR[key] ?? (status ? String(status) : "—");
+}
+
+/** Statut affiché en UI : la date prime sur un `in_progress` / `ongoing` incohérent. */
+export function getDisplayEventStatus(event) {
+  if (!event) return "pending";
+  const status = normalizeEventStatus(event.status);
+  if (status === "completed") return "completed";
+  const dueDate = event.dueDate;
+  if (dueDate) {
+    if (isEventDayAfterToday(dueDate) && status === "in_progress") {
+      return "pending";
+    }
+    if (isEventDayBeforeToday(dueDate) && status === "in_progress") {
+      return "completed";
+    }
+  }
+  return status;
+}
+
+export function formatEventStatusLabelForEvent(event) {
+  return formatEventStatusLabel(getDisplayEventStatus(event));
+}
+
+export function eventStatusBadgeKey(event) {
+  return normalizeEventStatus(getDisplayEventStatus(event));
+}
+
+/** Classes Tailwind pour badges de statut événement (gestion organisateur, modales). */
+export const EVENT_STATUS_BADGE_CLASS = {
+  pending: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
+  in_progress: "bg-sky-500/20 text-sky-300 border border-sky-500/30",
+  completed: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
+};
+
+export function eventStatusBadgeClassName(event) {
+  const key = eventStatusBadgeKey(event);
+  return (
+    EVENT_STATUS_BADGE_CLASS[key] || "bg-zinc-700 text-zinc-300 border border-zinc-600/30"
+  );
+}
+
+export function formatParticipantStatusLabel(status) {
+  const s = String(status ?? "").trim().toLowerCase();
+  const map = {
+    pending: "En attente",
+    confirmed: "Confirmé",
+    cancelled: "Annulé",
+    ongoing: "En cours",
+  };
+  return map[s] ?? (status ? String(status) : "—");
+}
+
+export function normalizeMatchScoreStatus(status) {
+  const s = String(status ?? "").trim().toLowerCase();
+  if (!s) return "scheduled";
+  if (s === "ongoing") return "in_progress";
+  return s;
+}
+
+const MATCH_SCORE_STATUS_LABELS_FR = {
+  scheduled: "Prévu",
+  in_progress: "En cours",
+  finished: "Terminé",
+};
+
+export function formatMatchScoreStatusLabel(status) {
+  const key = normalizeMatchScoreStatus(status);
+  return MATCH_SCORE_STATUS_LABELS_FR[key] ?? (status ? String(status) : "—");
+}
+
 /**
  * Phase affichée côté Home (date calendaire + statut).
  * Un match d'un jour passé n'est jamais « en cours », même si le statut API est bloqué.
@@ -73,13 +277,20 @@ export function isEventDayAfterToday(dueDate) {
 export function getEventPhase(event) {
   if (!event) return "unknown";
 
-  if (event.status === "completed") return "past";
+  const status = normalizeEventStatus(event.status);
+
+  if (status === "completed") return "past";
 
   if (isEventDayBeforeToday(event.dueDate)) return "past";
 
-  if (event.status === "in_progress") return "live";
+  if (isEventDayAfterToday(event.dueDate)) return "upcoming";
 
-  if (event.status === "pending") {
+  if (status === "in_progress") {
+    if (!event.dueDate || isEventToday(event.dueDate)) return "live";
+    return "upcoming";
+  }
+
+  if (status === "pending") {
     if (!event.dueDate) return "upcoming";
     if (isEventDayAfterToday(event.dueDate)) return "upcoming";
     // même jour calendaire, encore pending
@@ -139,17 +350,69 @@ export const PHASE_BADGE_CLASS = {
   unknown: "bg-zinc-700 text-gray-400",
 };
 
+/** Nom + score (panneau central, liste) selon phase et résultat. */
+export function teamMatchResultStyles(score, otherScore, phase) {
+  if (score == null || otherScore == null) {
+    return { name: "text-white font-bold", score: "text-white font-bold" };
+  }
+
+  if (phase === "live") {
+    return {
+      name: "text-white font-bold",
+      score: "text-white font-bold",
+    };
+  }
+
+  if (phase === "past") {
+    if (score > otherScore) {
+      return {
+        name: "text-zinc-100 font-medium",
+        score: "text-white font-bold",
+      };
+    }
+    if (score < otherScore) {
+      return {
+        name: "text-gray-500 font-normal",
+        score: "text-gray-500 font-normal",
+      };
+    }
+    return {
+      name: "text-white font-bold",
+      score: "text-gray-500 font-normal",
+    };
+  }
+
+  return { name: "text-white font-bold", score: "text-orange-400 font-bold" };
+}
+
+export function normalizeSportTypeKey(type) {
+  const n = String(type || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+  if (!n) return "";
+  if (n === "course" || n === "course_a_pied" || n === "courseapied") {
+    return "course_a_pied";
+  }
+  return n;
+}
+
+const SPORT_TYPE_LABELS = {
+  football: "Football",
+  basketball: "Basketball",
+  tennis: "Tennis",
+  rugby: "Rugby",
+  handball: "Handball",
+  course_a_pied: "Course à pied",
+};
+
+/** Sports proposés dans les filtres (liste fixe, indépendante des événements chargés). */
+export const SPORT_FILTER_TYPE_KEYS = Object.keys(SPORT_TYPE_LABELS);
+
 export function formatSportType(type) {
   if (!type) return "Sport inconnu";
-  const map = {
-    football: "Football",
-    basketball: "Basketball",
-    tennis: "Tennis",
-    rugby: "Rugby",
-    handball: "Handball",
-    course_a_pied: "Course à pied",
-  };
-  return map[type] || type.replace(/_/g, " ");
+  const key = normalizeSportTypeKey(type);
+  return SPORT_TYPE_LABELS[key] || key.replace(/_/g, " ");
 }
 
 const INDIVIDUAL_SPORT_KEYWORDS = [
@@ -176,6 +439,31 @@ export function eventHasTeamScore(event) {
   return Boolean(event.hasTeams);
 }
 
+/** Onglets et chargements côté page « Gérer les événements ». */
+export function getEventOrganizerCapabilities(event) {
+  const individual = isIndividualSport(event?.type);
+  const teamScore = eventHasTeamScore(event);
+  return {
+    individual,
+    teamScore,
+    showTeamsTab: Boolean(event?.hasTeams) && !individual,
+    showScoreTab: teamScore,
+    showRaceTab: individual,
+  };
+}
+
+/** Saisie organisateur : « 42:05 », « 1:02:30 » ou secondes. */
+export function parseRaceTimeInput(value) {
+  const v = String(value ?? "").trim();
+  if (!v) return null;
+  if (/^\d+$/.test(v)) return Number(v);
+  const parts = v.split(":").map((p) => Number(p.trim()));
+  if (parts.some((n) => Number.isNaN(n))) return null;
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return null;
+}
+
 export function getPhaseHeadline(event, phase) {
   const teamSport = eventHasTeamScore(event);
   if (phase === "live") {
@@ -198,8 +486,8 @@ export function formatElapsedSeconds(seconds) {
   return `${m}:${String(sec).padStart(2, "0")}`;
 }
 
-export function getEventLiveElapsedSeconds(event) {
-  const start = parseEventDate(event?.dueDate);
+export function getEventLiveElapsedSeconds(event, scoreMatch = null) {
+  const start = getEventLiveStartInstant(event, scoreMatch);
   if (!start) return 0;
   return Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000));
 }
@@ -254,6 +542,21 @@ export function filterEventsByCalendarDay(events, day) {
     .filter((ev) => {
       const eventDay = eventDayStart(ev.dueDate);
       return eventDay && eventDay.getTime() === target;
+    })
+    .sort(
+      (a, b) =>
+        (parseEventDate(a.dueDate)?.getTime() ?? 0) -
+        (parseEventDate(b.dueDate)?.getTime() ?? 0),
+    );
+}
+
+/** Événements strictement après aujourd'hui (calendrier, listes latérales). */
+export function listUpcomingEventsAfterToday(events) {
+  const today = startOfCalendarDay();
+  return [...(events || [])]
+    .filter((ev) => {
+      const day = eventDayStart(ev.dueDate);
+      return day && day.getTime() > today.getTime();
     })
     .sort(
       (a, b) =>
@@ -330,7 +633,7 @@ function formatWeekdayAndTime(d, dueDateRaw) {
 /**
  * Colonne date/heure liste (type Sofascore) :
  * - demain → heure + « Demain »
- * - aujourd’hui (à venir) → heure + « Aujourd’hui »
+ * - aujourd’hui (à venir ou terminé ce jour) → « Aujourd’hui » (+ heure si connue)
  * - sinon → JJ/MM/AAAA + jour · heure en gris
  */
 export function formatEventListDateColumn(event, phase) {
@@ -348,9 +651,15 @@ export function formatEventListDateColumn(event, phase) {
     return { primary: "—", secondary: null, live: false };
   }
 
-  const time = formatTimeLabel(d, dueDateRaw) ?? "—";
-
   if (phase === "past") {
+    if (isEventToday(dueDateRaw)) {
+      const timeStr = formatTimeLabel(d, dueDateRaw);
+      return {
+        primary: formatDateNumeric(d),
+        secondary: timeStr ? `Aujourd'hui · ${timeStr}` : "Aujourd'hui",
+        live: false,
+      };
+    }
     return {
       primary: formatDateNumeric(d),
       secondary: formatWeekdayAndTime(d, dueDateRaw),
@@ -359,17 +668,19 @@ export function formatEventListDateColumn(event, phase) {
   }
 
   if (isEventTomorrow(dueDateRaw)) {
+    const timeStr = formatTimeLabel(d, dueDateRaw);
     return {
-      primary: time,
-      secondary: "Demain",
+      primary: formatDateNumeric(d),
+      secondary: timeStr ? `Demain · ${timeStr}` : "Demain",
       live: false,
     };
   }
 
   if (isEventToday(dueDateRaw)) {
+    const timeStr = formatTimeLabel(d, dueDateRaw);
     return {
-      primary: time,
-      secondary: "Aujourd'hui",
+      primary: formatDateNumeric(d),
+      secondary: timeStr ? `Aujourd'hui · ${timeStr}` : "Aujourd'hui",
       live: false,
     };
   }
@@ -392,26 +703,33 @@ export function teamAccentColor(team, fallback = "#374151") {
   return fallback;
 }
 
+/** Nom affichable de l'organisateur (créateur) — jamais l'e-mail (affichage public). */
+export function eventOrganizerName(event) {
+  const creator = event?.creator;
+  if (!creator) return null;
+  const full = [creator.firstName, creator.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  return full || creator.username?.trim() || null;
+}
+
 export function memberDisplayName(member) {
   const user = member?.user;
   if (!user) return "Joueur";
   const full = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
-  return full || user.username || user.email || "Joueur";
+  return full || user.username || "Joueur";
 }
 
 export function participantDisplayName(participant) {
   const user = participant?.user;
   if (!user) return "Coureur";
   const full = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
-  return full || user.username || user.email || "Coureur";
+  return full || user.username || "Coureur";
 }
 
-export function participantSubtitle(participant) {
-  const user = participant?.user;
-  if (!user) return null;
-  if (user.username && user.email && user.username !== user.email) {
-    return user.email;
-  }
+/** Sous-titre public : pas d'e-mail (RGPD). */
+export function participantSubtitle() {
   return null;
 }
 

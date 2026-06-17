@@ -5,14 +5,15 @@ import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
 import RouteProteger from "./components/RouteProteger";
 import ScoreBoardDetails from "./components/ScoreBoardDetails";
-import NoPage from "./pages/404";
 import Calendrier from "./pages/Calendrier";
 import Contact from "./pages/Contact";
-import Dashboard from "./pages/DashboardAdmin";
+import DashboardAdmin from "./pages/DashboardAdmin";
 import EventDetailPage from "./pages/EventDetailPage";
-import GestionEvenements from "./pages/GestionEvenement";
+import GestionEvenement from "./pages/GestionEvenement";
 import Home from "./pages/Home";
+import LegalPage from "./pages/LegalPage";
 import Login from "./pages/Login";
+import NoPage from "./pages/404";
 import Profile from "./pages/profile";
 import Register from "./pages/Register";
 import RequestDashboard from "./pages/RequestDashboard";
@@ -29,10 +30,11 @@ function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-zinc-900 flex flex-col">
         <Navbar />
-        <main className="flex-1">
+        <main className="relative z-0 flex-1">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/legal/:slug" element={<LegalPage />} />
 
             <Route element={<RouteProteger />}>
               <Route path="/" element={<Home />} />
@@ -46,7 +48,7 @@ function App() {
             </Route>
 
             <Route element={<RouteProteger roles={adminRoles} />}>
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard" element={<DashboardAdmin />} />
               <Route path="/RequestDashboard" element={<RequestDashboard />} />
               <Route path="/dashboard/users" element={<UsersDashboard />} />
               <Route path="ScoreboardDetails" element={<ScoreBoardDetails />} />
@@ -55,7 +57,7 @@ function App() {
             <Route element={<RouteProteger roles={organizerOrAdminRoles} />}>
               <Route
                 path="/organisateur/evenements"
-                element={<GestionEvenements />}
+                element={<GestionEvenement />}
               />
             </Route>
             <Route path="*" element={<NoPage />} />

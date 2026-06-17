@@ -1,26 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client.js";
 import { ParticipationButtons } from "../components/ParticipationButtons";
 import { useEventTeams } from "../hooks/useEventTeams";
-
-function formatSportType(type) {
-  if (!type) return null;
-  const map = {
-    football: "Football",
-    basketball: "Basketball",
-    tennis: "Tennis",
-    rugby: "Rugby",
-    handball: "Handball",
-  };
-  return map[type] || type;
-}
+import {
+  eventOrganizerName,
+  formatSportType,
+  formatEventStatusLabelForEvent,
+  formatParticipantStatusLabel,
+  memberDisplayName,
+  participantDisplayName,
+} from "../utils/eventPresentation.js";
 
 function formatParticipantStatus(status) {
   if (status === "pending") return "En attente";
   if (status === "confirmed") return "Confirmé";
   if (status === "cancelled") return "Annulé";
-  return status;
+  return formatParticipantStatusLabel(status);
 }
 
 function formatVisibility(v) {
@@ -38,7 +34,13 @@ function formatTeamMemberRole(role) {
 function EventDetailPage() {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const id = Number(eventId);
+
+  const backLink =
+    location.state?.from === "home"
+      ? { to: "/", label: "Retour à l'accueil" }
+      : { to: "/calendrier", label: "Retour au calendrier" };
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -160,6 +162,8 @@ function EventDetailPage() {
     !currentUser?.roles?.includes("ROLE_ORGANISATEUR") &&
     !currentUser?.roles?.includes("ROLE_ADMIN");
 
+  const isAdmin = !!currentUser?.roles?.includes("ROLE_ADMIN");
+
   const canChooseTeam =
     isStandardUser && !!event?.hasTeams && isUserParticipant;
 
@@ -250,10 +254,10 @@ function EventDetailPage() {
         <div className="max-w-3xl mx-auto">
           <button
             type="button"
-            onClick={() => navigate("/calendrier")}
+            onClick={() => navigate(backLink.to)}
             className="text-orange-400 hover:text-orange-300 text-sm mb-6"
           >
-            ← Retour au calendrier
+            ← {backLink.label}
           </button>
           <div className="rounded-xl border border-red-700/60 bg-red-900/20 px-4 py-3 text-red-200">
             {error || "Événement introuvable."}
@@ -265,16 +269,19 @@ function EventDetailPage() {
 
   const participantCount = eventParticipants.length;
   const sportLabel = formatSportType(event.type);
+  const sportBadge =
+    sportLabel && sportLabel !== "Sport inconnu" ? sportLabel : null;
+  const organizerName = eventOrganizerName(event);
 
   return (
     <div className="min-h-screen bg-zinc-900 px-4 sm:px-6 pt-24 pb-16 text-white">
       <div className="max-w-5xl mx-auto space-y-8">
         <div>
           <Link
-            to="/calendrier"
+            to={backLink.to}
             className="inline-flex items-center gap-2 text-orange-400 hover:text-orange-300 text-sm font-medium transition"
           >
-            ← Retour au calendrier
+            ← {backLink.label}
           </Link>
         </div>
 
@@ -297,20 +304,20 @@ function EventDetailPage() {
                     )
                   : "Date à définir"}
               </p>
+              {organizerName && (
+                <p className="mt-1 text-sm text-zinc-400">
+                  Organisateur :{" "}
+                  <span className="text-zinc-200">{organizerName}</span>
+                </p>
+              )}
               <div className="mt-4 flex flex-wrap gap-2">
                 <span className="inline-flex items-center rounded-full bg-zinc-700 px-3 py-1 text-xs font-medium text-zinc-200">
                   Statut :{" "}
-                  {event.status === "pending"
-                    ? "En attente"
-                    : event.status === "in_progress"
-                      ? "En cours"
-                      : event.status === "completed"
-                        ? "Terminé"
-                        : event.status}
+                  {formatEventStatusLabelForEvent(event)}
                 </span>
-                {sportLabel && (
+                {sportBadge && (
                   <span className="inline-flex items-center rounded-full bg-zinc-700 px-3 py-1 text-xs font-medium text-zinc-200">
-                    {sportLabel}
+                    {sportBadge}
                   </span>
                 )}
                 <span className="inline-flex items-center rounded-full bg-zinc-700 px-3 py-1 text-xs font-medium text-zinc-200">
@@ -349,9 +356,11 @@ function EventDetailPage() {
               {event.creator ? (
                 <div>
                   <p className="font-medium text-white">
-                    {event.creator.username || "—"}
+                    {organizerName || "—"}
                   </p>
-                  <p className="text-sm text-zinc-400">{event.creator.email}</p>
+                  {isAdmin && event.creator.email && (
+                    <p className="text-sm text-zinc-400">{event.creator.email}</p>
+                  )}
                 </div>
               ) : (
                 <p className="text-zinc-400 text-sm">Non renseigné</p>
@@ -369,8 +378,7 @@ function EventDetailPage() {
               ) : (
                 <ul className="space-y-2 max-h-80 overflow-y-auto pr-1">
                   {eventParticipants.map((p) => {
-                    const u = p.user;
-                    const name = u?.username || u?.email || "Utilisateur";
+                    const name = participantDisplayName(p);
                     return (
                       <li
                         key={p.id}
@@ -380,11 +388,6 @@ function EventDetailPage() {
                           <p className="font-medium text-white truncate">
                             {name}
                           </p>
-                          {u?.email && (
-                            <p className="text-xs text-zinc-500 truncate">
-                              {u.email}
-                            </p>
-                          )}
                         </div>
                         <span
                           className={`shrink-0 text-xs font-medium px-2 py-1 rounded ${
@@ -456,9 +459,7 @@ function EventDetailPage() {
                           ) : (
                             <ul className="divide-y divide-zinc-700/80">
                               {members.map((m) => {
-                                const u = m.user;
-                                const display =
-                                  u?.username || u?.email || "Membre";
+                                const display = memberDisplayName(m);
                                 return (
                                   <li
                                     key={m.id}
@@ -468,11 +469,6 @@ function EventDetailPage() {
                                       <p className="text-sm font-medium text-white truncate">
                                         {display}
                                       </p>
-                                      {u?.email && (
-                                        <p className="text-xs text-zinc-500 truncate">
-                                          {u.email}
-                                        </p>
-                                      )}
                                     </div>
                                     <span className="shrink-0 text-xs text-orange-300/90 font-medium">
                                       {formatTeamMemberRole(m.role)}

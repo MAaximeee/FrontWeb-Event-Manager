@@ -396,7 +396,7 @@ const AddEvent = ({ isOpen, onClose, onEventAdded }) => {
               </button>
               <button
                 type="submit"
-                className="flex-1 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? "Ajout..." : "Ajouter"}
@@ -471,7 +471,7 @@ const AddEvent = ({ isOpen, onClose, onEventAdded }) => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-700 transition disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition disabled:opacity-50"
                   disabled={teamLoading}
                 >
                   {teamLoading ? "Création..." : "Créer l'équipe"}

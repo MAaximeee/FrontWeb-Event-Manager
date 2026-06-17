@@ -6,7 +6,7 @@ const NoPage = () => {
     <div className="min-h-screen bg-zinc-800 flex items-center justify-center px-4 ">
       <div className="text-center">
         <h1 className="text-9xl font-bold text-orange-500">404</h1>
-        <h2 className="text-4xl font-bold text-white mt-4">Page introuvable</h2>
+        <h2 className="text-4xl font-bold text-orange-500 mt-4">Page introuvable</h2>
         <p className="text-gray-400 mt-4 text-lg">
           Désolé, la page que vous recherchez n'existe pas.
         </p>

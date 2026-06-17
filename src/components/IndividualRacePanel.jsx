@@ -6,14 +6,15 @@ import {
   formatEventHeaderPill,
   formatRaceDuration,
   formatSportType,
+  eventOrganizerName,
   getEventLiveElapsedSeconds,
   isIndividualSport,
-  parseEventDate,
   participantDisplayName,
   participantSubtitle,
   PHASE_BADGE_CLASS,
   PHASE_LABELS,
 } from "../utils/eventPresentation.js";
+import { HomeEventPanelHeader } from "./HomeEventPanelHeader.jsx";
 
 function RaceGeneralTable({ event, participants, raceResults, phase }) {
   const standings = buildRaceStandings(participants, raceResults);
@@ -88,10 +89,11 @@ export function IndividualRacePanel({
   phase,
   participants = [],
   raceResults = [],
+  detailAction = null,
 }) {
-  const d = parseEventDate(event?.dueDate);
-  const year = d ? d.getFullYear() : "—";
   const live = phase === "live";
+  const organizer = eventOrganizerName(event);
+  const headerPill = formatEventHeaderPill(event?.dueDate);
 
   const [, setLiveTick] = useState(0);
   useEffect(() => {
@@ -101,34 +103,31 @@ export function IndividualRacePanel({
   }, [live]);
 
   return (
-    <div className="w-full max-w-lg mx-auto text-left">
-      <header className="mb-4">
-        <h2 className="text-lg font-bold text-white leading-snug line-clamp-2">
-          {event?.title || "Course"}
-        </h2>
-        <p className="text-sm text-gray-500 mt-0.5 tabular-nums">{year}</p>
-        <p className="text-xs text-gray-500 mt-2 tabular-nums">
-          {formatEventHeaderPill(event?.dueDate)}
-          <span className="text-gray-600"> · </span>
-          {formatSportType(event?.type)}
-        </p>
-        <div className="mt-2">
-          <span
-            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${PHASE_BADGE_CLASS[phase] || PHASE_BADGE_CLASS.unknown}`}
-          >
-            {live ? (
-              <>
-                Live ·{" "}
-                <span className="tabular-nums ml-0.5">
-                  {formatElapsedSeconds(getEventLiveElapsedSeconds(event))}
-                </span>
-              </>
-            ) : (
-              PHASE_LABELS[phase]
-            )}
-          </span>
-        </div>
-      </header>
+    <div className="w-full max-w-lg min-[1800px]:max-w-xl mx-auto px-1 py-1">
+      <HomeEventPanelHeader
+        title={event?.title || "Course"}
+        headerPill={headerPill}
+        sport={formatSportType(event?.type)}
+        organizer={organizer}
+        detailAction={detailAction}
+      />
+
+      <div className="mb-3">
+        <span
+          className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${PHASE_BADGE_CLASS[phase] || PHASE_BADGE_CLASS.unknown}`}
+        >
+          {live ? (
+            <>
+              Live ·{" "}
+              <span className="tabular-nums ml-0.5">
+                {formatElapsedSeconds(getEventLiveElapsedSeconds(event))}
+              </span>
+            </>
+          ) : (
+            PHASE_LABELS[phase]
+          )}
+        </span>
+      </div>
 
       <div className="border-b border-zinc-700 mb-3">
         <span className="inline-block pb-2 text-sm font-semibold text-white border-b-2 border-orange-500">

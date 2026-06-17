@@ -57,7 +57,7 @@ const Login = () => {
           <img src={logo} alt="Logo" className="h-20 w-auto" />
         </div>
         <hr className="border-white mb-6" />
-        <h2 className="text-2xl text-white font-bold text-center mb-6">
+        <h2 className="text-2xl text-orange-500 font-bold text-center mb-6">
           Connectez-vous
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -82,7 +82,7 @@ const Login = () => {
           </div>
           <button
             type="submit"
-            className="cursor-pointer w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 rounded transition-colors"
+            className="cursor-pointer w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded transition-colors"
           >
             Connexion
           </button>

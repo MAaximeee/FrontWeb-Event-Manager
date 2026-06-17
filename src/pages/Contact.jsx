@@ -1,22 +1,45 @@
 import { useState } from "react";
 import { api } from "../api/client.js";
 
+const fieldClass =
+  "w-full rounded-lg border border-zinc-600 bg-zinc-700 px-3 py-2.5 text-sm text-white placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500/30 transition";
+
+function FormAlert({ type, children }) {
+  if (type === "success") {
+    return (
+      <div
+        role="status"
+        className="rounded-lg border border-green-500 bg-green-500/10 p-4"
+      >
+        <p className="text-sm text-green-400">{children}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div role="alert" className="rounded-lg border border-red-500 bg-red-500/10 p-4">
+      <p className="text-sm text-red-400">{children}</p>
+    </div>
+  );
+}
+
 const Contact = () => {
-  const [form, setForm] = useState({
-    subject: "",
-    message: "",
-  });
+  const [form, setForm] = useState({ subject: "", message: "" });
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setSuccess("");
+    setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccess("");
     setError("");
+    setSubmitting(true);
 
     try {
       await api.post("/api/requests/create", {
@@ -24,86 +47,94 @@ const Contact = () => {
         message: form.message,
       });
 
-      setSuccess("Demande envoyée avec succès !");
+      setSuccess(
+        "Votre message a bien été envoyé. Nous vous répondrons dès que possible.",
+      );
       setForm({ subject: "", message: "" });
     } catch (err) {
       console.error(
         "Erreur création demande :",
         err.response ? err.response.data : err.message,
       );
+      const apiMessage = err.response?.data?.message;
       setError(
-        "Erreur lors de l'envoi de la demande. Vérifie la console pour plus de détails.",
+        apiMessage ||
+          "Impossible d'envoyer votre message pour le moment. Réessayez plus tard.",
       );
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-zinc-900 relative overflow-x-hidden pt-20 sm:pt-24">
-      {/* Contenu */}
-      <div className="flex justify-center items-start sm:items-center min-h-[calc(100vh-5rem)] px-4 sm:px-6 md:px-8 lg:px-12 py-8 sm:py-12">
-        <div className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl min-h-[500px] sm:min-h-[600px] md:h-[700px] bg-zinc-800 rounded-lg p-4 sm:p-6 md:p-8 flex flex-col">
-          {/* Titre */}
-          <h1 className="flex justify-center text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3">
-            Contact Support
+    <div className="w-full px-4 sm:px-6 lg:px-8 pt-24 pb-16 text-white">
+      <div className="mx-auto w-full max-w-lg">
+        <header className="mb-6 border-b border-zinc-700/80 pb-4">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-orange-500">
+            Contact
           </h1>
-          <p className="text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base text-center">
-            Un problème, une question ? Notre équipe est là pour vous aider.
+          <p className="mt-2 text-sm text-zinc-400 leading-relaxed">
+            Une question ou un problème ? Décrivez votre demande : notre équipe
+            vous répondra rapidement.
           </p>
+        </header>
 
-          {/* Message succès / erreur */}
-          {success && (
-            <p className="text-green-400 mb-3 sm:mb-4 text-sm sm:text-base text-center">
-              {success}
-            </p>
-          )}
-          {error && (
-            <p className="text-red-500 mb-3 sm:mb-4 text-sm sm:text-base text-center">
-              {error}
-            </p>
+        <div className="rounded-lg border border-zinc-700 bg-zinc-800 shadow-sm p-5 sm:p-6">
+          {(success || error) && (
+            <div className="mb-5 space-y-3">
+              {success ? <FormAlert type="success">{success}</FormAlert> : null}
+              {error ? <FormAlert type="error">{error}</FormAlert> : null}
+            </div>
           )}
 
-          {/* Formulaire */}
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col gap-3 sm:gap-4 flex-1"
-          >
-            {/* Sujet */}
-            <div className="flex-shrink-0">
-              <label className="text-white text-sm sm:text-base mb-1 sm:mb-2 block">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label
+                htmlFor="contact-subject"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
                 Objet
               </label>
               <input
+                id="contact-subject"
                 type="text"
                 name="subject"
                 value={form.subject}
                 onChange={handleChange}
-                placeholder="Ex : Demande de rôle administrateur"
-                className="w-full p-2 sm:p-3 rounded bg-zinc-700 text-white border border-zinc-600 focus:outline-none focus:border-orange-500 text-sm sm:text-base"
+                placeholder="Ex. demande d'accès organisateur"
+                className={fieldClass}
                 required
+                disabled={submitting}
+                autoComplete="off"
               />
             </div>
 
-            {/* Message */}
-            <div className="flex-1 min-h-[200px] sm:min-h-[250px] md:min-h-[300px]">
-              <label className="text-white text-sm sm:text-base mb-1 sm:mb-2 block">
+            <div>
+              <label
+                htmlFor="contact-message"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
                 Message
               </label>
               <textarea
+                id="contact-message"
                 name="message"
                 value={form.message}
                 onChange={handleChange}
-                placeholder="Décris ton problème en détail..."
-                className="w-full h-full min-h-[180px] sm:min-h-[220px] md:min-h-[280px] p-2 sm:p-3 rounded bg-zinc-700 text-white border border-zinc-600 resize-none focus:outline-none focus:border-orange-500 text-sm sm:text-base"
+                placeholder="Décrivez votre demande en quelques lignes…"
+                rows={6}
+                className={`${fieldClass} resize-y min-h-[9rem]`}
                 required
+                disabled={submitting}
               />
             </div>
 
-            {/* Bouton */}
             <button
               type="submit"
-              className="mt-2 sm:mt-4 bg-[#F04406] hover:bg-orange-700 text-white py-2 sm:py-3 rounded-lg transition font-semibold text-sm sm:text-base w-full sm:w-auto"
+              disabled={submitting}
+              className="w-full rounded-lg bg-orange-500 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Envoyer au support
+              {submitting ? "Envoi en cours…" : "Envoyer le message"}
             </button>
           </form>
         </div>

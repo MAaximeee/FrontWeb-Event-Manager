@@ -60,7 +60,7 @@ const RequestList = () => {
   return (
     <div className="text-white">
       <section className="mb-8">
-        <h2 className="text-2xl font-bold text-white mb-4">Demandes en attente</h2>
+        <h2 className="text-2xl font-bold text-orange-500 mb-4">Demandes en attente</h2>
         {pendingRequests.length === 0 ? (
           <p className="text-zinc-400">Aucune demande en attente</p>
         ) : (
@@ -118,7 +118,7 @@ const RequestList = () => {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold text-white mb-4">Demandes traitées</h2>
+        <h2 className="text-2xl font-bold text-orange-500 mb-4">Demandes traitées</h2>
         {treatedRequests.length === 0 ? (
           <p className="text-zinc-400">Aucune demande traitée</p>
         ) : (
